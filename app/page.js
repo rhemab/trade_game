@@ -89,8 +89,8 @@ export default function Home() {
             ) : (
                 <div className="flex gap-8">
                     <StockChart chartData={chartData} xDataKey={"t"} yDataKey={"c"} />
-                    <div className="flex flex-col items-center border-2 border-gray-400 rounded-lg text-center min-w-[25rem]">
-                        {spyData?.bars?.SPY && <div className="p-4">{spyData?.bars?.SPY[index].c}</div>}
+                    <div className="flex flex-col items-center rounded-lg text-center min-w-[25rem]">
+                        {spyData?.bars?.SPY && <div className="p-4">Last: {spyData?.bars?.SPY[index].c}</div>}
                         <div className="flex">
                             <button className="btn bg-green-800 w-max" onClick={buy}>
                                 Buy 100
@@ -136,11 +136,14 @@ export default function Home() {
                                 <button className="btn bg-gray-700 w-max" onClick={() => setSpeed(100)}>
                                     Fast
                                 </button>
+                                <button className="btn bg-gray-700 w-max" onClick={() => setSpeed(10)}>
+                                    Ludacris Speed!
+                                </button>
                             </div>
                             <div className="stat place-items-center">
                                 <progress
                                     className="progress w-56"
-                                    value={speed == 500 ? "100" : speed == 100 ? "500" : speed}
+                                    value={speed == 500 ? "10" : speed == 250 ? "100" : speed == 100 ? "250" : "500"}
                                     max="500"
                                 ></progress>
                             </div>
