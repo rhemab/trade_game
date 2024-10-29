@@ -6,7 +6,6 @@ export default function StockChart({ chartData, xDataKey, yDataKey }) {
     return (
         <ResponsiveContainer width="100%" height="100%">
             <LineChart width={1000} height={600} data={chartData}>
-                <CartesianGrid strokeDasharray="0.01" />
                 <XAxis dataKey={xDataKey} />
                 <YAxis />
                 <Tooltip isAnimationActive={false} />
