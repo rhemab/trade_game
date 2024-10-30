@@ -10,10 +10,13 @@ let tqqqEquity;
 let nflxEquity;
 let tltEquity;
 let bacEquity;
+let lplEquity;
+let koEquity;
+
 const startingCash = 100000;
 const startingIndex = 250;
-const tickers = ["SPY", "TQQQ", "NFLX", "TLT", "BAC"];
-const fakeTickers = { SPY: "ETF", TQQQ: "3xETF", NFLX: "TV", TLT: "BONDS", BAC: "BANK" };
+const tickers = ["SPY", "TQQQ", "NFLX", "TLT", "BAC", "LPL", "KO"];
+const fakeTickers = { SPY: "ETF", TQQQ: "3xETF", NFLX: "TV", TLT: "BONDS", BAC: "BANK", LPL: "PHONE", KO: "DRINK" };
 
 export default function Home() {
     const [loadingStocks, stocksError, stockData, getStockData] = useAlpacaApi(
@@ -25,6 +28,8 @@ export default function Home() {
     const [nflxData, setNFLXData] = useState([]);
     const [tltData, setTLTData] = useState([]);
     const [bacData, setBACData] = useState([]);
+    const [lplData, setLPLData] = useState([]);
+    const [koData, setKOData] = useState([]);
     const [speed, setSpeed] = useState(250);
     const [index, setIndex] = useState(startingIndex);
     const [cash, setCash] = useState(startingCash);
@@ -34,6 +39,8 @@ export default function Home() {
         NFLX: { shares: 0, price: 0, amountInvested: 0 },
         TLT: { shares: 0, price: 0, amountInvested: 0 },
         BAC: { shares: 0, price: 0, amountInvested: 0 },
+        LPL: { shares: 0, price: 0, amountInvested: 0 },
+        KO: { shares: 0, price: 0, amountInvested: 0 },
     });
     const [equity, setEquity] = useState(0);
     const [totalReturn, setTotalReturn] = useState(0);
@@ -137,6 +144,18 @@ export default function Home() {
                     { t: formatNumber(stockData.bars.BAC[index].c, "decimal", 0, 0), c: stockData.bars.BAC[index].c },
                 ]);
             }
+            if (index < stockData?.bars?.LPL.length) {
+                setLPLData([
+                    ...lplData,
+                    { t: formatNumber(stockData.bars.LPL[index].c, "decimal", 0, 0), c: stockData.bars.LPL[index].c },
+                ]);
+            }
+            if (index < stockData?.bars?.KO.length) {
+                setKOData([
+                    ...koData,
+                    { t: formatNumber(stockData.bars.KO[index].c, "decimal", 0, 0), c: stockData.bars.KO[index].c },
+                ]);
+            }
         }
     }
 
@@ -170,7 +189,9 @@ export default function Home() {
             nflxEquity = Math.abs(shares.NFLX.shares) * Number(getClosePrice("NFLX"));
             tltEquity = Math.abs(shares.TLT.shares) * Number(getClosePrice("TLT"));
             bacEquity = Math.abs(shares.BAC.shares) * Number(getClosePrice("BAC"));
-            setEquity(spyEquity + tqqqEquity + nflxEquity + tltEquity + bacEquity);
+            lplEquity = Math.abs(shares.LPL.shares) * Number(getClosePrice("LPL"));
+            koEquity = Math.abs(shares.KO.shares) * Number(getClosePrice("KO"));
+            setEquity(spyEquity + tqqqEquity + nflxEquity + tltEquity + bacEquity + lplEquity + koEquity);
         }
     }, [index, shares]);
 
@@ -208,6 +229,16 @@ export default function Home() {
             );
             setBACData(
                 stockData?.bars?.BAC.slice(0, startingIndex).map((day) => {
+                    return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                }),
+            );
+            setLPLData(
+                stockData?.bars?.LPL.slice(0, startingIndex).map((day) => {
+                    return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                }),
+            );
+            setKOData(
+                stockData?.bars?.KO.slice(0, startingIndex).map((day) => {
                     return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
                 }),
             );
@@ -278,6 +309,8 @@ export default function Home() {
                     {activeTicker == "NFLX" && <StockChart chartData={nflxData} xDataKey={"t"} yDataKey={"c"} />}
                     {activeTicker == "TLT" && <StockChart chartData={tltData} xDataKey={"t"} yDataKey={"c"} />}
                     {activeTicker == "BAC" && <StockChart chartData={bacData} xDataKey={"t"} yDataKey={"c"} />}
+                    {activeTicker == "LPL" && <StockChart chartData={lplData} xDataKey={"t"} yDataKey={"c"} />}
+                    {activeTicker == "KO" && <StockChart chartData={koData} xDataKey={"t"} yDataKey={"c"} />}
                     <div className="flex flex-col items-end">
                         <div className="stat place-items-end">
                             <div className="stat-title">Close</div>
