@@ -469,16 +469,25 @@ export default function Home() {
                                 </div>
                             </div>
                             <div className="stat flex justify-center">
-                                <button className="btn" onClick={() => setSpeed(250)}>
+                                <button
+                                    className={speed == 250 ? "btn btn-success" : "btn"}
+                                    onClick={() => setSpeed(250)}
+                                >
                                     Slow
                                 </button>
-                                <button className="btn" onClick={() => setSpeed(100)}>
+                                <button
+                                    className={speed == 100 ? "btn btn-success" : "btn"}
+                                    onClick={() => setSpeed(100)}
+                                >
                                     Normal
                                 </button>
-                                <button className="btn" onClick={() => setSpeed(10)}>
+                                <button
+                                    className={speed == 10 ? "btn btn-success" : "btn"}
+                                    onClick={() => setSpeed(10)}
+                                >
                                     Fast
                                 </button>
-                                <button className="btn" onClick={() => setSpeed(1)}>
+                                <button className={speed == 1 ? "btn btn-success" : "btn"} onClick={() => setSpeed(1)}>
                                     Ludacris Speed!
                                 </button>
                             </div>
