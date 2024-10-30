@@ -25,44 +25,83 @@ export default function Home() {
     const [nflxData, setNFLXData] = useState([]);
     const [tltData, setTLTData] = useState([]);
     const [bacData, setBACData] = useState([]);
-    const [speed, setSpeed] = useState(500);
+    const [speed, setSpeed] = useState(250);
     const [index, setIndex] = useState(startingIndex);
     const [cash, setCash] = useState(startingCash);
-    const [shares, setShares] = useState({ SPY: 0, TQQQ: 0, NFLX: 0, TLT: 0, BAC: 0 });
+    const [shares, setShares] = useState({
+        SPY: { shares: 0, price: 0, amountInvested: 0 },
+        TQQQ: { shares: 0, price: 0, amountInvested: 0 },
+        NFLX: { shares: 0, price: 0, amountInvested: 0 },
+        TLT: { shares: 0, price: 0, amountInvested: 0 },
+        BAC: { shares: 0, price: 0, amountInvested: 0 },
+    });
     const [equity, setEquity] = useState(0);
     const [totalReturn, setTotalReturn] = useState(0);
     const [annualReturn, setAnnualReturn] = useState(0);
     const [activeTicker, setActiveTicker] = useState("SPY");
 
     function buy() {
-        const sharePrice = Number(stockData.bars[activeTicker][index].c);
+        const sharePrice = Number(getClosePrice(activeTicker));
         if (cash >= sharePrice * 100) {
-            setShares({ ...shares, [activeTicker]: shares[activeTicker] + 100 });
-            setCash(cash - sharePrice * 100);
+            const currentShares = Number(shares[activeTicker].shares);
+            const amountInvested = Number(shares[activeTicker].amountInvested);
+            const newInvestment = Number(sharePrice * 100);
+            const avgPrice = (amountInvested + newInvestment) / (currentShares + 100);
+            setShares({
+                ...shares,
+                [activeTicker]: {
+                    shares: currentShares + 100,
+                    price: avgPrice,
+                    amountInvested: amountInvested + newInvestment,
+                },
+            });
+            setCash(cash - newInvestment);
         }
     }
 
     function sell() {
-        if (shares[activeTicker] > 0) {
-            setShares({ ...shares, [activeTicker]: shares[activeTicker] - 100 });
-            setCash(cash + Number(stockData.bars[activeTicker][index].c) * 100);
+        const currentShares = Number(shares[activeTicker].shares);
+        if (currentShares >= 100) {
+            const sharePrice = Number(getClosePrice(activeTicker));
+            const currentPrice = Number(shares[activeTicker].price);
+            const amountInvested = Number(shares[activeTicker].amountInvested);
+            setShares({
+                ...shares,
+                [activeTicker]: {
+                    shares: currentShares - 100,
+                    price: currentShares == 100 ? 0 : currentPrice,
+                    amountInvested: amountInvested - sharePrice * 100,
+                },
+            });
+            setCash(cash + sharePrice * 100);
         }
     }
 
     function buyMax() {
-        const sharePrice = Number(stockData.bars[activeTicker][index].c);
+        const sharePrice = Number(getClosePrice(activeTicker));
         const maxShares = Math.floor(cash / sharePrice);
         if (maxShares > 0) {
-            setShares({ ...shares, [activeTicker]: shares[activeTicker] + maxShares });
-            setCash(cash - sharePrice * maxShares);
+            const currentShares = shares[activeTicker].shares;
+            const amountInvested = Number(shares[activeTicker].amountInvested);
+            const newInvestment = Number(sharePrice * maxShares);
+            const avgPrice = (amountInvested + newInvestment) / (currentShares + maxShares);
+            setShares({
+                ...shares,
+                [activeTicker]: {
+                    shares: currentShares + maxShares,
+                    price: avgPrice,
+                    amountInvested: amountInvested + newInvestment,
+                },
+            });
+            setCash(cash - newInvestment);
         }
     }
 
     function sellMax() {
-        const sharePrice = Number(stockData.bars[activeTicker][index].c);
-        const numberOfShares = shares[activeTicker];
+        const sharePrice = Number(getClosePrice(activeTicker));
+        const numberOfShares = shares[activeTicker].shares;
         if (numberOfShares > 0) {
-            setShares({ ...shares, [activeTicker]: shares[activeTicker] - numberOfShares });
+            setShares({ ...shares, [activeTicker]: { shares: 0, price: 0, amountInvested: 0 } });
             setCash(cash + sharePrice * numberOfShares);
         }
     }
@@ -101,6 +140,16 @@ export default function Home() {
         }
     }
 
+    function getClosePrice(ticker) {
+        if (stockData?.bars) {
+            let indexOffset = 1;
+            while (index - indexOffset >= stockData.bars[ticker].length) {
+                indexOffset++;
+            }
+            return stockData?.bars[ticker][index - indexOffset].c;
+        }
+    }
+
     useEffect(() => {
         getStockData();
     }, []);
@@ -108,21 +157,11 @@ export default function Home() {
     // set equity
     useEffect(() => {
         if (stockData?.bars) {
-            if (index < stockData?.bars?.SPY.length) {
-                spyEquity = Math.abs(shares.SPY) * Number(stockData.bars.SPY[index].c);
-            }
-            if (index < stockData?.bars?.TQQQ.length) {
-                tqqqEquity = Math.abs(shares.TQQQ) * Number(stockData.bars.TQQQ[index].c);
-            }
-            if (index < stockData?.bars?.NFLX.length) {
-                nflxEquity = Math.abs(shares.NFLX) * Number(stockData.bars.NFLX[index].c);
-            }
-            if (index < stockData?.bars?.TLT.length) {
-                tltEquity = Math.abs(shares.TLT) * Number(stockData.bars.TLT[index].c);
-            }
-            if (index < stockData?.bars?.BAC.length) {
-                bacEquity = Math.abs(shares.BAC) * Number(stockData.bars.BAC[index].c);
-            }
+            spyEquity = Math.abs(shares.SPY.shares) * Number(getClosePrice("SPY"));
+            tqqqEquity = Math.abs(shares.TQQQ.shares) * Number(getClosePrice("TQQQ"));
+            nflxEquity = Math.abs(shares.NFLX.shares) * Number(getClosePrice("NFLX"));
+            tltEquity = Math.abs(shares.TLT.shares) * Number(getClosePrice("TLT"));
+            bacEquity = Math.abs(shares.BAC.shares) * Number(getClosePrice("BAC"));
             setEquity(spyEquity + tqqqEquity + nflxEquity + tltEquity + bacEquity);
         }
     }, [index, shares]);
@@ -175,20 +214,45 @@ export default function Home() {
     });
 
     return (
-        <div className="flex justify-end min-h-96 pr-4">
+        <div className="flex justify-center min-h-96 pr-4">
             {loadingStocks ? (
                 <div className="loading loading-spinner"></div>
             ) : stocksError ? (
                 <div>Error fetching data</div>
             ) : (
                 <div className="flex gap-8">
-                    <div className="menu gap-4">
+                    <ul className="menu gap-2 bg-base-200 w-56">
+                        <div>Stocks</div>
                         {tickers.map((ticker) => (
-                            <button key={ticker} className="btn" onClick={() => setActiveTicker(ticker)}>
-                                {fakeTickers[ticker]}
-                            </button>
+                            <li key={ticker}>
+                                <a
+                                    className={
+                                        ticker == activeTicker ? "active flex justify-between" : "flex justify-between"
+                                    }
+                                    onClick={() => setActiveTicker(ticker)}
+                                >
+                                    <p>{fakeTickers[ticker]}</p>
+                                    <p>{getClosePrice(ticker)}</p>
+                                </a>
+                            </li>
                         ))}
-                    </div>
+                    </ul>
+                    <ul className="menu gap-2 bg-base-200 w-40">
+                        <div>Positions</div>
+                        {tickers.map((ticker) => (
+                            <li key={ticker}>
+                                <a
+                                    className={
+                                        ticker == activeTicker ? "active flex justify-between" : "flex justify-between"
+                                    }
+                                    onClick={() => setActiveTicker(ticker)}
+                                >
+                                    <p>{formatNumber(shares[ticker].shares, "decimal", 0, 0)}</p>
+                                    <p>@ {formatNumber(shares[ticker].price)}</p>
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
                     {activeTicker == "SPY" && <StockChart chartData={spyData} xDataKey={"t"} yDataKey={"c"} />}
                     {activeTicker == "TQQQ" && <StockChart chartData={tqqqData} xDataKey={"t"} yDataKey={"c"} />}
                     {activeTicker == "NFLX" && <StockChart chartData={nflxData} xDataKey={"t"} yDataKey={"c"} />}
@@ -197,50 +261,25 @@ export default function Home() {
                     <div className="flex flex-col items-end">
                         <div className="stat place-items-end">
                             <div className="stat-title">Close</div>
-                            {index < stockData.bars[activeTicker].length ? (
-                                <div className="stat-value">{stockData?.bars[activeTicker][index].c}</div>
-                            ) : index - 1 < stockData.bars[activeTicker].length ? (
-                                <div className="stat-value">{stockData?.bars[activeTicker][index - 1].c}</div>
-                            ) : index - 2 < stockData.bars[activeTicker].length ? (
-                                <div className="stat-value">{stockData?.bars[activeTicker][index - 2].c}</div>
-                            ) : index - 3 < stockData.bars[activeTicker].length ? (
-                                <div className="stat-value">{stockData?.bars[activeTicker][index - 3].c}</div>
-                            ) : index - 4 < stockData.bars[activeTicker].length ? (
-                                <div className="stat-value">{stockData?.bars[activeTicker][index - 4].c}</div>
-                            ) : index - 5 < stockData.bars[activeTicker].length ? (
-                                <div className="stat-value">{stockData?.bars[activeTicker][index - 5].c}</div>
-                            ) : (
-                                <div className="stat-value">{stockData?.bars[activeTicker][index - 6].c}</div>
-                            )}
+                            <div className="stat-value">{getClosePrice(activeTicker)}</div>
                         </div>
-                        <div className="flex">
-                            <button className="btn bg-green-800 w-max" onClick={buy}>
+                        <div className="flex justify-between w-52">
+                            <button className="btn m-1 bg-green-800 w-max" onClick={buy}>
                                 Buy 100
                             </button>
-                            <button className="btn bg-red-800" onClick={sell}>
+                            <button className="btn m-1 bg-red-800" onClick={sell}>
                                 Sell 100
                             </button>
                         </div>
-                        <div className="flex">
-                            <button className="btn bg-green-800 w-max" onClick={buyMax}>
+                        <div className="flex justify-between w-52">
+                            <button className="btn m-1 bg-green-800 w-max" onClick={buyMax}>
                                 Buy Max
                             </button>
-                            <button className="btn bg-red-800" onClick={sellMax}>
+                            <button className="btn m-1 bg-red-800" onClick={sellMax}>
                                 Sell Max
                             </button>
                         </div>
                         <div className="stats stats-vertical shadow">
-                            <div className="stat  place-items-end">
-                                <div className="stat-title">Shares</div>
-                                <div className="flex gap-8">
-                                    {tickers.map((ticker) => (
-                                        <div key={ticker}>
-                                            <div className="stat-title">{fakeTickers[ticker]}</div>
-                                            <div className="stat-value">{shares[ticker]}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                             <div className="stat place-items-end">
                                 <div className="stat-title">Cash</div>
                                 <div className="stat-value">{formatCurrency(cash, 0)}</div>
@@ -264,24 +303,24 @@ export default function Home() {
                                 </div>
                             </div>
                             <div className="stat flex justify-center">
-                                <button className="btn" onClick={() => setSpeed(500)}>
+                                <button className="btn" onClick={() => setSpeed(250)}>
                                     Slow
                                 </button>
-                                <button className="btn" onClick={() => setSpeed(250)}>
+                                <button className="btn" onClick={() => setSpeed(100)}>
                                     Normal
                                 </button>
-                                <button className="btn" onClick={() => setSpeed(100)}>
+                                <button className="btn" onClick={() => setSpeed(10)}>
                                     Fast
                                 </button>
-                                <button className="btn" onClick={() => setSpeed(10)}>
+                                <button className="btn" onClick={() => setSpeed(1)}>
                                     Ludacris Speed!
                                 </button>
                             </div>
                             <div className="stat place-items-end">
                                 <progress
                                     className="progress w-56"
-                                    value={speed == 500 ? "10" : speed == 250 ? "100" : speed == 100 ? "250" : "500"}
-                                    max="500"
+                                    value={speed == 250 ? "10" : speed == 100 ? "75" : speed == 10 ? "150" : "250"}
+                                    max="250"
                                 ></progress>
                             </div>
                         </div>

@@ -25,7 +25,6 @@ export default function useAlpacaApi(path, loadOnStart = true) {
             })
             .then((data) => {
                 setData(data);
-                console.log(data);
             })
             .catch((err) => {
                 console.error(err);

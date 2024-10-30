@@ -3,10 +3,10 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 
 export default function StockChart({ chartData, xDataKey, yDataKey }) {
-    const largeScreen = screen.width > 1700;
+    const largeScreen = window.innerWidth > 2000;
 
     return (
-        <LineChart width={largeScreen ? 1000 : 800} height={largeScreen ? 600 : 600} data={chartData}>
+        <LineChart width={largeScreen ? 1000 : 600} height={largeScreen ? 600 : 400} data={chartData}>
             <XAxis dataKey={xDataKey} />
             <YAxis />
             <Tooltip isAnimationActive={false} />
