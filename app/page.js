@@ -11,7 +11,7 @@ let nflxEquity;
 let tltEquity;
 let bacEquity;
 const startingCash = 100000;
-const startingIndex = 200;
+const startingIndex = 250;
 const tickers = ["SPY", "TQQQ", "NFLX", "TLT", "BAC"];
 const fakeTickers = { SPY: "ETF", TQQQ: "3xETF", NFLX: "TV", TLT: "BONDS", BAC: "BANK" };
 
@@ -150,6 +150,14 @@ export default function Home() {
         }
     }
 
+    function calculatePL(ticker) {
+        if (shares[ticker].price > 0) {
+            return (getClosePrice(ticker) - shares[ticker].price) / shares[ticker].price;
+        } else {
+            return 0;
+        }
+    }
+
     useEffect(() => {
         getStockData();
     }, []);
@@ -220,7 +228,7 @@ export default function Home() {
             ) : stocksError ? (
                 <div>Error fetching data</div>
             ) : (
-                <div className="flex gap-8">
+                <div className="flex">
                     <ul className="menu gap-2 bg-base-200 w-56">
                         <div>Stocks</div>
                         {tickers.map((ticker) => (
@@ -237,21 +245,33 @@ export default function Home() {
                             </li>
                         ))}
                     </ul>
-                    <ul className="menu gap-2 bg-base-200 w-40">
+                    <ul className="menu gap-2 bg-base-200 w-56">
                         <div>Positions</div>
-                        {tickers.map((ticker) => (
-                            <li key={ticker}>
-                                <a
-                                    className={
-                                        ticker == activeTicker ? "active flex justify-between" : "flex justify-between"
-                                    }
-                                    onClick={() => setActiveTicker(ticker)}
-                                >
-                                    <p>{formatNumber(shares[ticker].shares, "decimal", 0, 0)}</p>
-                                    <p>@ {formatNumber(shares[ticker].price)}</p>
-                                </a>
-                            </li>
-                        ))}
+                        {tickers.map((ticker) => {
+                            const pnl = calculatePL(ticker);
+                            const myShares = shares[ticker].shares;
+                            const price = shares[ticker].price;
+                            return (
+                                <li key={ticker}>
+                                    <a
+                                        className={
+                                            ticker == activeTicker
+                                                ? "active flex justify-between"
+                                                : "flex justify-between"
+                                        }
+                                        onClick={() => setActiveTicker(ticker)}
+                                    >
+                                        <p className={myShares == 0 ? "hidden" : ""}>
+                                            {formatNumber(myShares, "decimal", 0, 0)}
+                                        </p>
+                                        <p className={myShares == 0 ? "hidden" : ""}>{`@ ${formatNumber(price)}`}</p>
+                                        <p className={pnl > 0 ? "text-success" : pnl == 0 ? "" : "text-red-600"}>
+                                            {myShares == 0 ? "--" : formatNumber(pnl, "percent", 0, 0)}
+                                        </p>
+                                    </a>
+                                </li>
+                            );
+                        })}
                     </ul>
                     {activeTicker == "SPY" && <StockChart chartData={spyData} xDataKey={"t"} yDataKey={"c"} />}
                     {activeTicker == "TQQQ" && <StockChart chartData={tqqqData} xDataKey={"t"} yDataKey={"c"} />}
