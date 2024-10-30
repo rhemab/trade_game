@@ -7,7 +7,7 @@ export default function StockChart({ chartData, xDataKey, yDataKey }) {
 
     return (
         <LineChart width={largeScreen ? 1000 : 600} height={largeScreen ? 600 : 400} data={chartData}>
-            <XAxis dataKey={xDataKey} />
+            <XAxis hide dataKey={xDataKey} />
             <YAxis />
             <Tooltip isAnimationActive={false} />
             <Line isAnimationActive={false} type="monotone" dataKey={yDataKey} stroke="#8884d8" dot={false} />
