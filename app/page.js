@@ -4,32 +4,51 @@ import useAlpacaApi from "./hooks/useAlpacaApi";
 import { useEffect, useState } from "react";
 import StockChart from "./components/stockChart";
 import useFormat from "./hooks/useFormat";
+import dayjs from "dayjs";
 
-let spyEquity;
-let tqqqEquity;
-let nflxEquity;
-let tltEquity;
-let bacEquity;
-let lplEquity;
-let koEquity;
+let spyEquity = 0;
+let tqqqEquity = 0;
+let nflxEquity = 0;
+let tltEquity = 0;
+let bacEquity = 0;
+let lplEquity = 0;
+let koEquity = 0;
 
 const startingCash = 100000;
-const startingIndex = 250;
+const startingIndex = 254;
 const tickers = ["SPY", "TQQQ", "NFLX", "TLT", "BAC", "LPL", "KO"];
 const fakeTickers = { SPY: "ETF", TQQQ: "3xETF", NFLX: "TV", TLT: "BONDS", BAC: "BANK", LPL: "PHONE", KO: "DRINK" };
 
 export default function Home() {
-    const [loadingStocks, stocksError, stockData, getStockData] = useAlpacaApi(
-        `stocks/bars?symbols=${tickers}&timeframe=1Day&start=2020-01-01T00%3A00%3A00Z&limit=10000&adjustment=raw&sort=asc&feed=iex`,
+    const [loadingSpy, spyError, spyData, getSpyData] = useAlpacaApi(
+        `stocks/bars?symbols=SPY&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
     );
-    const { formatCurrency, formatNumber } = useFormat();
-    const [spyData, setSPYData] = useState([]);
-    const [tqqqData, setTQQQData] = useState([]);
-    const [nflxData, setNFLXData] = useState([]);
-    const [tltData, setTLTData] = useState([]);
-    const [bacData, setBACData] = useState([]);
-    const [lplData, setLPLData] = useState([]);
-    const [koData, setKOData] = useState([]);
+    const [loadingTqqq, tqqqError, tqqqData, getTqqqData] = useAlpacaApi(
+        `stocks/bars?symbols=TQQQ&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
+    );
+    const [loadingNflx, nflxError, nflxData, getNflxData] = useAlpacaApi(
+        `stocks/bars?symbols=NFLX&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
+    );
+    const [loadingTlt, tltError, tltData, getTltData] = useAlpacaApi(
+        `stocks/bars?symbols=TLT&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
+    );
+    const [loadingBac, bacError, bacData, getBacData] = useAlpacaApi(
+        `stocks/bars?symbols=BAC&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
+    );
+    const [loadingLpl, lplError, lplData, getLplData] = useAlpacaApi(
+        `stocks/bars?symbols=LPL&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
+    );
+    const [loadingKo, koError, koData, getKoData] = useAlpacaApi(
+        `stocks/bars?symbols=KO&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
+    );
+    const { formatCurrency, formatNumber, convertDuration } = useFormat();
+    const [spyChartData, setSPYChartData] = useState([]);
+    const [tqqqChartData, setTQQQChartData] = useState([]);
+    const [nflxChartData, setNFLXChartData] = useState([]);
+    const [tltChartData, setTLTChartData] = useState([]);
+    const [bacChartData, setBACChartData] = useState([]);
+    const [lplChartData, setLPLChartData] = useState([]);
+    const [koChartData, setKOChartData] = useState([]);
     const [speed, setSpeed] = useState(250);
     const [index, setIndex] = useState(startingIndex);
     const [cash, setCash] = useState(startingCash);
@@ -44,8 +63,10 @@ export default function Home() {
     });
     const [equity, setEquity] = useState(0);
     const [totalReturn, setTotalReturn] = useState(0);
-    const [annualReturn, setAnnualReturn] = useState(0);
     const [activeTicker, setActiveTicker] = useState("SPY");
+    const [startingDay, setStartingDay] = useState(undefined);
+    const [currentDay, setCurrentDay] = useState(undefined);
+    const [loading, setLoading] = useState(true);
 
     function buy() {
         const sharePrice = Number(getClosePrice(activeTicker));
@@ -114,58 +135,111 @@ export default function Home() {
     }
 
     function addChartData() {
-        if (stockData?.bars && index < stockData?.bars?.SPY.length - 1) {
+        if (spyData?.bars && index < spyData?.bars?.SPY.length - 1) {
             setIndex(index + 1);
-            setSPYData([
-                ...spyData,
-                { t: formatNumber(stockData.bars.SPY[index].c, "decimal", 0, 0), c: stockData.bars.SPY[index].c },
+            setCurrentDay(spyData?.bars?.SPY[index].t);
+            setSPYChartData([
+                ...spyChartData,
+                { t: formatNumber(spyData.bars.SPY[index].c, "decimal", 0, 0), c: spyData.bars.SPY[index].c },
             ]);
-            if (index < stockData?.bars?.TQQQ.length) {
-                setTQQQData([
-                    ...tqqqData,
-                    { t: formatNumber(stockData.bars.TQQQ[index].c, "decimal", 0, 0), c: stockData.bars.TQQQ[index].c },
+            if (tqqqData?.bars?.TQQQ?.length && index < tqqqData?.bars?.TQQQ.length) {
+                setTQQQChartData([
+                    ...tqqqChartData,
+                    { t: formatNumber(tqqqData.bars.TQQQ[index].c, "decimal", 0, 0), c: tqqqData.bars.TQQQ[index].c },
                 ]);
             }
-            if (index < stockData?.bars?.NFLX.length) {
-                setNFLXData([
-                    ...nflxData,
-                    { t: formatNumber(stockData.bars.NFLX[index].c, "decimal", 0, 0), c: stockData.bars.NFLX[index].c },
+            if (nflxData?.bars?.NFLX?.length && index < nflxData?.bars?.NFLX.length) {
+                setNFLXChartData([
+                    ...nflxChartData,
+                    { t: formatNumber(nflxData.bars.NFLX[index].c, "decimal", 0, 0), c: nflxData.bars.NFLX[index].c },
                 ]);
             }
-            if (index < stockData?.bars?.TLT.length) {
-                setTLTData([
-                    ...tltData,
-                    { t: formatNumber(stockData.bars.TLT[index].c, "decimal", 0, 0), c: stockData.bars.TLT[index].c },
+            if (tltData?.bars?.TLT?.length && index < tltData?.bars?.TLT.length) {
+                setTLTChartData([
+                    ...tltChartData,
+                    { t: formatNumber(tltData.bars.TLT[index].c, "decimal", 0, 0), c: tltData.bars.TLT[index].c },
                 ]);
             }
-            if (index < stockData?.bars?.BAC.length) {
-                setBACData([
-                    ...bacData,
-                    { t: formatNumber(stockData.bars.BAC[index].c, "decimal", 0, 0), c: stockData.bars.BAC[index].c },
+            if (bacData?.bars?.BAC?.length && index < bacData?.bars?.BAC.length) {
+                setBACChartData([
+                    ...bacChartData,
+                    { t: formatNumber(bacData.bars.BAC[index].c, "decimal", 0, 0), c: bacData.bars.BAC[index].c },
                 ]);
             }
-            if (index < stockData?.bars?.LPL.length) {
-                setLPLData([
-                    ...lplData,
-                    { t: formatNumber(stockData.bars.LPL[index].c, "decimal", 0, 0), c: stockData.bars.LPL[index].c },
+            if (lplData?.bars?.LPL?.length && index < lplData?.bars?.LPL.length) {
+                setLPLChartData([
+                    ...lplChartData,
+                    { t: formatNumber(lplData.bars.LPL[index].c, "decimal", 0, 0), c: lplData.bars.LPL[index].c },
                 ]);
             }
-            if (index < stockData?.bars?.KO.length) {
-                setKOData([
-                    ...koData,
-                    { t: formatNumber(stockData.bars.KO[index].c, "decimal", 0, 0), c: stockData.bars.KO[index].c },
+            if (koData?.bars?.KO?.length && index < koData?.bars?.KO.length) {
+                setKOChartData([
+                    ...koChartData,
+                    { t: formatNumber(koData.bars.KO[index].c, "decimal", 0, 0), c: koData.bars.KO[index].c },
                 ]);
             }
         }
     }
 
     function getClosePrice(ticker) {
-        if (stockData?.bars) {
-            let indexOffset = 1;
-            while (index - indexOffset >= stockData.bars[ticker].length) {
-                indexOffset++;
-            }
-            return stockData?.bars[ticker][index - indexOffset].c;
+        switch (ticker) {
+            case "SPY":
+                if (spyData?.bars[ticker]?.length) {
+                    let indexOffset = 1;
+                    while (index - indexOffset >= spyData.bars[ticker].length) {
+                        indexOffset++;
+                    }
+                    return spyData?.bars[ticker][index - indexOffset].c;
+                }
+
+            case "TQQQ":
+                if (tqqqData?.bars[ticker]?.length) {
+                    let indexOffset = 1;
+                    while (index - indexOffset >= tqqqData.bars[ticker].length) {
+                        indexOffset++;
+                    }
+                    return tqqqData?.bars[ticker][index - indexOffset].c;
+                }
+            case "NFLX":
+                if (nflxData?.bars[ticker]?.length) {
+                    let indexOffset = 1;
+                    while (index - indexOffset >= nflxData.bars[ticker].length) {
+                        indexOffset++;
+                    }
+                    return nflxData?.bars[ticker][index - indexOffset].c;
+                }
+            case "TLT":
+                if (tltData?.bars[ticker]?.length) {
+                    let indexOffset = 1;
+                    while (index - indexOffset >= tltData.bars[ticker].length) {
+                        indexOffset++;
+                    }
+                    return tltData?.bars[ticker][index - indexOffset].c;
+                }
+            case "LPL":
+                if (lplData?.bars[ticker]?.length) {
+                    let indexOffset = 1;
+                    while (index - indexOffset >= lplData.bars[ticker].length) {
+                        indexOffset++;
+                    }
+                    return lplData?.bars[ticker][index - indexOffset].c;
+                }
+            case "BAC":
+                if (bacData?.bars[ticker]?.length) {
+                    let indexOffset = 1;
+                    while (index - indexOffset >= bacData.bars[ticker].length) {
+                        indexOffset++;
+                    }
+                    return bacData?.bars[ticker][index - indexOffset].c;
+                }
+            case "KO":
+                if (koData?.bars[ticker]?.length) {
+                    let indexOffset = 1;
+                    while (index - indexOffset >= koData.bars[ticker].length) {
+                        indexOffset++;
+                    }
+                    return koData?.bars[ticker][index - indexOffset].c;
+                }
         }
     }
 
@@ -178,72 +252,109 @@ export default function Home() {
     }
 
     useEffect(() => {
-        getStockData();
+        if (!loadingSpy && !loadingTqqq && !loadingNflx && !loadingBac && !loadingTlt && !loadingLpl && !loadingKo) {
+            setLoading(false);
+        }
+    }, [loadingSpy, loadingTqqq, loadingNflx, loadingBac, loadingTlt, loadingLpl, loadingKo]);
+
+    useEffect(() => {
+        getSpyData();
+        getTqqqData();
+        getNflxData();
+        getBacData();
+        getTltData();
+        getLplData();
+        getKoData();
     }, []);
 
     // set equity
     useEffect(() => {
-        if (stockData?.bars) {
+        if (spyData?.bars) {
             spyEquity = Math.abs(shares.SPY.shares) * Number(getClosePrice("SPY"));
-            tqqqEquity = Math.abs(shares.TQQQ.shares) * Number(getClosePrice("TQQQ"));
-            nflxEquity = Math.abs(shares.NFLX.shares) * Number(getClosePrice("NFLX"));
-            tltEquity = Math.abs(shares.TLT.shares) * Number(getClosePrice("TLT"));
-            bacEquity = Math.abs(shares.BAC.shares) * Number(getClosePrice("BAC"));
-            lplEquity = Math.abs(shares.LPL.shares) * Number(getClosePrice("LPL"));
-            koEquity = Math.abs(shares.KO.shares) * Number(getClosePrice("KO"));
-            setEquity(spyEquity + tqqqEquity + nflxEquity + tltEquity + bacEquity + lplEquity + koEquity);
         }
+        if (tqqqData?.bars) {
+            tqqqEquity = Math.abs(shares.TQQQ.shares) * Number(getClosePrice("TQQQ"));
+        }
+        if (nflxData?.bars) {
+            nflxEquity = Math.abs(shares.NFLX.shares) * Number(getClosePrice("NFLX"));
+        }
+        if (tltData?.bars) {
+            tltEquity = Math.abs(shares.TLT.shares) * Number(getClosePrice("TLT"));
+        }
+        if (bacData?.bars) {
+            bacEquity = Math.abs(shares.BAC.shares) * Number(getClosePrice("BAC"));
+        }
+        if (lplData?.bars) {
+            lplEquity = Math.abs(shares.LPL.shares) * Number(getClosePrice("LPL"));
+        }
+        if (koData?.bars) {
+            koEquity = Math.abs(shares.KO.shares) * Number(getClosePrice("KO"));
+        }
+        setEquity(spyEquity + tqqqEquity + nflxEquity + tltEquity + bacEquity + lplEquity + koEquity);
     }, [index, shares]);
 
     // set return
     useEffect(() => {
-        if (stockData?.bars) {
-            const totalReturn = (cash + equity - startingCash) / startingCash;
-            setTotalReturn(totalReturn);
-            setAnnualReturn(totalReturn / (index / 250));
-        }
+        const totalReturn = (cash + equity - startingCash) / startingCash;
+        setTotalReturn(totalReturn);
     }, [equity]);
 
     // set stock data when loaded
     useEffect(() => {
-        if (!loadingStocks && stockData?.bars) {
-            setSPYData(
-                stockData?.bars?.SPY.slice(0, startingIndex).map((day) => {
-                    return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
-                }),
-            );
-            setTQQQData(
-                stockData?.bars?.TQQQ.slice(0, startingIndex).map((day) => {
-                    return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
-                }),
-            );
-            setNFLXData(
-                stockData?.bars?.NFLX.slice(0, startingIndex).map((day) => {
-                    return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
-                }),
-            );
-            setTLTData(
-                stockData?.bars?.TLT.slice(0, startingIndex).map((day) => {
-                    return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
-                }),
-            );
-            setBACData(
-                stockData?.bars?.BAC.slice(0, startingIndex).map((day) => {
-                    return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
-                }),
-            );
-            setLPLData(
-                stockData?.bars?.LPL.slice(0, startingIndex).map((day) => {
-                    return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
-                }),
-            );
-            setKOData(
-                stockData?.bars?.KO.slice(0, startingIndex).map((day) => {
-                    return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
-                }),
-            );
+        if (!loading) {
+            if (spyData?.bars?.SPY?.length) {
+                setStartingDay(spyData?.bars?.SPY[0].t);
+                setCurrentDay(spyData?.bars?.SPY[0].t);
+                setSPYChartData(
+                    spyData?.bars?.SPY.slice(0, startingIndex).map((day) => {
+                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                    }),
+                );
+            }
+            if (tqqqData?.bars?.TQQQ?.length) {
+                setTQQQChartData(
+                    tqqqData?.bars?.TQQQ.slice(0, startingIndex).map((day) => {
+                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                    }),
+                );
+            }
+            if (nflxData?.bars?.NFLX?.length) {
+                setNFLXChartData(
+                    nflxData?.bars?.NFLX.slice(0, startingIndex).map((day) => {
+                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                    }),
+                );
+            }
+            if (tltData?.bars?.TLT?.length) {
+                setTLTChartData(
+                    tltData?.bars?.TLT.slice(0, startingIndex).map((day) => {
+                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                    }),
+                );
+            }
+            if (bacData?.bars?.BAC?.length) {
+                setBACChartData(
+                    bacData?.bars?.BAC.slice(0, startingIndex).map((day) => {
+                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                    }),
+                );
+            }
+            if (lplData?.bars?.LPL?.length) {
+                setLPLChartData(
+                    lplData?.bars?.LPL.slice(0, startingIndex).map((day) => {
+                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                    }),
+                );
+            }
+            if (koData?.bars?.KO?.length) {
+                setKOChartData(
+                    koData?.bars?.KO.slice(0, startingIndex).map((day) => {
+                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                    }),
+                );
+            }
         }
-    }, [loadingStocks]);
+    }, [loading]);
 
     // set interval
     useEffect(() => {
@@ -254,9 +365,9 @@ export default function Home() {
 
     return (
         <div className="flex justify-center min-h-96 pr-4">
-            {loadingStocks ? (
+            {loading ? (
                 <div className="loading loading-spinner"></div>
-            ) : stocksError ? (
+            ) : spyError || tqqqError || nflxError || tltError || lplError || bacError || koError ? (
                 <div>Error fetching data</div>
             ) : (
                 <div className="flex">
@@ -304,13 +415,13 @@ export default function Home() {
                             );
                         })}
                     </ul>
-                    {activeTicker == "SPY" && <StockChart chartData={spyData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "TQQQ" && <StockChart chartData={tqqqData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "NFLX" && <StockChart chartData={nflxData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "TLT" && <StockChart chartData={tltData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "BAC" && <StockChart chartData={bacData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "LPL" && <StockChart chartData={lplData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "KO" && <StockChart chartData={koData} xDataKey={"t"} yDataKey={"c"} />}
+                    {activeTicker == "SPY" && <StockChart chartData={spyChartData} xDataKey={"t"} yDataKey={"c"} />}
+                    {activeTicker == "TQQQ" && <StockChart chartData={tqqqChartData} xDataKey={"t"} yDataKey={"c"} />}
+                    {activeTicker == "NFLX" && <StockChart chartData={nflxChartData} xDataKey={"t"} yDataKey={"c"} />}
+                    {activeTicker == "TLT" && <StockChart chartData={tltChartData} xDataKey={"t"} yDataKey={"c"} />}
+                    {activeTicker == "BAC" && <StockChart chartData={bacChartData} xDataKey={"t"} yDataKey={"c"} />}
+                    {activeTicker == "LPL" && <StockChart chartData={lplChartData} xDataKey={"t"} yDataKey={"c"} />}
+                    {activeTicker == "KO" && <StockChart chartData={koChartData} xDataKey={"t"} yDataKey={"c"} />}
                     <div className="flex flex-col items-end">
                         <div className="stat place-items-end">
                             <div className="stat-title">Close</div>
@@ -351,8 +462,10 @@ export default function Home() {
                                     <div className="stat-value">{formatNumber(totalReturn, "percent", 0, 0)}</div>
                                 </div>
                                 <div className="stat place-items-end">
-                                    <div className="stat-title">Annual Return</div>
-                                    <div className="stat-value">{formatNumber(annualReturn, "percent", 0, 0)}</div>
+                                    <div className="stat-title">Duration</div>
+                                    <div className="stat-value">
+                                        {convertDuration(dayjs(currentDay).diff(startingDay, "month"))}
+                                    </div>
                                 </div>
                             </div>
                             <div className="stat flex justify-center">
