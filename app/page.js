@@ -67,6 +67,7 @@ export default function Home() {
     const [startingDay, setStartingDay] = useState(undefined);
     const [currentDay, setCurrentDay] = useState(undefined);
     const [loading, setLoading] = useState(true);
+    const [startGame, setStartGame] = useState(false);
 
     function buy() {
         const sharePrice = Number(getClosePrice(activeTicker));
@@ -358,9 +359,10 @@ export default function Home() {
 
     // set interval
     useEffect(() => {
-        const timer = setInterval(() => addChartData(), speed);
-
-        return () => clearInterval(timer);
+        if (startGame) {
+            const timer = setInterval(() => addChartData(), speed);
+            return () => clearInterval(timer);
+        }
     });
 
     return (
@@ -370,30 +372,79 @@ export default function Home() {
             ) : spyError || tqqqError || nflxError || tltError || lplError || bacError || koError ? (
                 <div>Error fetching data</div>
             ) : (
-                <div className="flex">
-                    <ul className="menu gap-2 bg-base-200 w-56">
-                        <div>Stocks</div>
-                        {tickers.map((ticker) => (
-                            <li key={ticker}>
-                                <a
-                                    className={
-                                        ticker == activeTicker ? "active flex justify-between" : "flex justify-between"
-                                    }
-                                    onClick={() => setActiveTicker(ticker)}
-                                >
-                                    <p>{fakeTickers[ticker]}</p>
-                                    <p>{getClosePrice(ticker)}</p>
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                    <ul className="menu gap-2 bg-base-200 w-56">
-                        <div>Positions</div>
-                        {tickers.map((ticker) => {
-                            const pnl = calculatePL(ticker);
-                            const myShares = shares[ticker].shares;
-                            const price = shares[ticker].price;
-                            return (
+                <div>
+                    <div className="flex justify-between m-2">
+                        <div className="stats shadow">
+                            <div className="stat w-60">
+                                <div className="stat-title">Net Worth</div>
+                                <div className="stat-value">{formatCurrency(cash + equity, 0)}</div>
+                            </div>
+                            <div className="stat w-60">
+                                <div className="stat-title">Cash</div>
+                                <div className="stat-value">{formatCurrency(cash, 0)}</div>
+                            </div>
+                            <div className="stat flex">
+                                <div className="stat">
+                                    <div className="stat-title">Total Return</div>
+                                    <div className="stat-value">{formatNumber(totalReturn, "percent", 0, 0)}</div>
+                                </div>
+                                <div className="stat">
+                                    <div className="stat-title">Duration</div>
+                                    <div className="stat-value">
+                                        {convertDuration(dayjs(currentDay).diff(startingDay, "month"))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                className={startGame ? "btn" : "btn bg-success text-white"}
+                                onClick={() => setStartGame(true)}
+                            >
+                                Start Game
+                            </button>
+                            <button className="btn" onClick={() => window.location.reload()}>
+                                New Game
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="stat max-w-40">
+                            <div className="stat-title">Close</div>
+                            <div className="stat-value">{getClosePrice(activeTicker)}</div>
+                        </div>
+                        <div className="flex flex-col">
+                            <button className="btn m-1 bg-green-800 w-max" onClick={buy}>
+                                Buy 100
+                            </button>
+                            <button className="btn m-1 bg-red-800" onClick={sell}>
+                                Sell 100
+                            </button>
+                        </div>
+                        <div className="flex flex-col">
+                            <button className="btn m-1 bg-green-800 w-max" onClick={buyMax}>
+                                Buy Max
+                            </button>
+                            <button className="btn m-1 bg-red-800" onClick={sellMax}>
+                                Sell Max
+                            </button>
+                        </div>
+                        <div className="flex justify-end w-full">
+                            <button className={speed == 250 ? "btn btn-success" : "btn"} onClick={() => setSpeed(250)}>
+                                Slow
+                            </button>
+                            <button className={speed == 100 ? "btn btn-success" : "btn"} onClick={() => setSpeed(100)}>
+                                Normal
+                            </button>
+                            <button className={speed == 10 ? "btn btn-success" : "btn"} onClick={() => setSpeed(10)}>
+                                Fast
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex mt-2">
+                        <ul className="menu gap-2 bg-base-200 w-44">
+                            <div>Stocks</div>
+                            {tickers.map((ticker) => (
                                 <li key={ticker}>
                                     <a
                                         className={
@@ -403,102 +454,53 @@ export default function Home() {
                                         }
                                         onClick={() => setActiveTicker(ticker)}
                                     >
-                                        <p className={myShares == 0 ? "hidden" : ""}>
-                                            {formatNumber(myShares, "decimal", 0, 0)}
-                                        </p>
-                                        <p className={myShares == 0 ? "hidden" : ""}>{`@ ${formatNumber(price)}`}</p>
-                                        <p className={pnl > 0 ? "text-success" : pnl == 0 ? "" : "text-red-600"}>
-                                            {myShares == 0 ? "--" : formatNumber(pnl, "percent", 0, 0)}
-                                        </p>
+                                        <p>{fakeTickers[ticker]}</p>
+                                        <p>{getClosePrice(ticker)}</p>
                                     </a>
                                 </li>
-                            );
-                        })}
-                    </ul>
-                    {activeTicker == "SPY" && <StockChart chartData={spyChartData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "TQQQ" && <StockChart chartData={tqqqChartData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "NFLX" && <StockChart chartData={nflxChartData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "TLT" && <StockChart chartData={tltChartData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "BAC" && <StockChart chartData={bacChartData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "LPL" && <StockChart chartData={lplChartData} xDataKey={"t"} yDataKey={"c"} />}
-                    {activeTicker == "KO" && <StockChart chartData={koChartData} xDataKey={"t"} yDataKey={"c"} />}
-                    <div className="flex flex-col items-end">
-                        <div className="stat place-items-end">
-                            <div className="stat-title">Close</div>
-                            <div className="stat-value">{getClosePrice(activeTicker)}</div>
-                        </div>
-                        <div className="flex justify-between w-52">
-                            <button className="btn m-1 bg-green-800 w-max" onClick={buy}>
-                                Buy 100
-                            </button>
-                            <button className="btn m-1 bg-red-800" onClick={sell}>
-                                Sell 100
-                            </button>
-                        </div>
-                        <div className="flex justify-between w-52">
-                            <button className="btn m-1 bg-green-800 w-max" onClick={buyMax}>
-                                Buy Max
-                            </button>
-                            <button className="btn m-1 bg-red-800" onClick={sellMax}>
-                                Sell Max
-                            </button>
-                        </div>
-                        <div className="stats stats-vertical shadow">
-                            <div className="stat place-items-end">
-                                <div className="stat-title">Cash</div>
-                                <div className="stat-value">{formatCurrency(cash, 0)}</div>
-                            </div>
-                            <div className="stat place-items-end">
-                                <div className="stat-title">Equity</div>
-                                <div className="stat-value">{formatCurrency(equity, 0)}</div>
-                            </div>
-                            <div className="stat place-items-end">
-                                <div className="stat-title">Net Worth</div>
-                                <div className="stat-value">{formatCurrency(cash + equity, 0)}</div>
-                            </div>
-                            <div className="stat flex">
-                                <div className="stat place-items-end">
-                                    <div className="stat-title">Total Return</div>
-                                    <div className="stat-value">{formatNumber(totalReturn, "percent", 0, 0)}</div>
-                                </div>
-                                <div className="stat place-items-end">
-                                    <div className="stat-title">Duration</div>
-                                    <div className="stat-value">
-                                        {convertDuration(dayjs(currentDay).diff(startingDay, "month"))}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="stat flex justify-center">
-                                <button
-                                    className={speed == 250 ? "btn btn-success" : "btn"}
-                                    onClick={() => setSpeed(250)}
-                                >
-                                    Slow
-                                </button>
-                                <button
-                                    className={speed == 100 ? "btn btn-success" : "btn"}
-                                    onClick={() => setSpeed(100)}
-                                >
-                                    Normal
-                                </button>
-                                <button
-                                    className={speed == 10 ? "btn btn-success" : "btn"}
-                                    onClick={() => setSpeed(10)}
-                                >
-                                    Fast
-                                </button>
-                                <button className={speed == 1 ? "btn btn-success" : "btn"} onClick={() => setSpeed(1)}>
-                                    Ludacris Speed!
-                                </button>
-                            </div>
-                            <div className="stat place-items-end">
-                                <progress
-                                    className="progress w-56"
-                                    value={speed == 250 ? "10" : speed == 100 ? "75" : speed == 10 ? "150" : "250"}
-                                    max="250"
-                                ></progress>
-                            </div>
-                        </div>
+                            ))}
+                        </ul>
+                        <ul className="menu gap-2 bg-base-200 w-56">
+                            <div>Positions</div>
+                            {tickers.map((ticker) => {
+                                const pnl = calculatePL(ticker);
+                                const myShares = shares[ticker].shares;
+                                const price = shares[ticker].price;
+                                return (
+                                    <li key={ticker}>
+                                        <a
+                                            className={
+                                                ticker == activeTicker
+                                                    ? "active flex justify-between"
+                                                    : "flex justify-between"
+                                            }
+                                            onClick={() => setActiveTicker(ticker)}
+                                        >
+                                            <p className={myShares == 0 ? "hidden" : ""}>
+                                                {formatNumber(myShares, "decimal", 0, 0)}
+                                            </p>
+                                            <p
+                                                className={myShares == 0 ? "hidden" : ""}
+                                            >{`@ ${formatNumber(price)}`}</p>
+                                            <p className={pnl > 0 ? "text-success" : pnl == 0 ? "" : "text-red-600"}>
+                                                {myShares == 0 ? "--" : formatNumber(pnl, "percent", 0, 0)}
+                                            </p>
+                                        </a>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                        {activeTicker == "SPY" && <StockChart chartData={spyChartData} xDataKey={"t"} yDataKey={"c"} />}
+                        {activeTicker == "TQQQ" && (
+                            <StockChart chartData={tqqqChartData} xDataKey={"t"} yDataKey={"c"} />
+                        )}
+                        {activeTicker == "NFLX" && (
+                            <StockChart chartData={nflxChartData} xDataKey={"t"} yDataKey={"c"} />
+                        )}
+                        {activeTicker == "TLT" && <StockChart chartData={tltChartData} xDataKey={"t"} yDataKey={"c"} />}
+                        {activeTicker == "BAC" && <StockChart chartData={bacChartData} xDataKey={"t"} yDataKey={"c"} />}
+                        {activeTicker == "LPL" && <StockChart chartData={lplChartData} xDataKey={"t"} yDataKey={"c"} />}
+                        {activeTicker == "KO" && <StockChart chartData={koChartData} xDataKey={"t"} yDataKey={"c"} />}
                     </div>
                 </div>
             )}
