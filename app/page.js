@@ -63,6 +63,7 @@ export default function Home() {
     });
     const [equity, setEquity] = useState(0);
     const [totalReturn, setTotalReturn] = useState(0);
+    const [annualReturn, setAnnualReturn] = useState(0);
     const [activeTicker, setActiveTicker] = useState("SPY");
     const [startingDay, setStartingDay] = useState(undefined);
     const [currentDay, setCurrentDay] = useState(undefined);
@@ -296,8 +297,12 @@ export default function Home() {
 
     // set return
     useEffect(() => {
-        const totalReturn = (cash + equity - startingCash) / startingCash;
-        setTotalReturn(totalReturn);
+        const days = Number(dayjs(currentDay).diff(startingDay, "day"));
+        const newTotalReturn = (cash + equity - startingCash) / startingCash;
+        const newAnnualReturn = newTotalReturn > 0 ? Math.pow(1 + newTotalReturn, 365 / days) - 1 : 0;
+
+        setTotalReturn(newTotalReturn);
+        setAnnualReturn(newAnnualReturn);
     }, [equity]);
 
     // set stock data when loaded
@@ -389,6 +394,10 @@ export default function Home() {
                                     <div className="stat-value">{formatNumber(totalReturn, "percent", 0, 0)}</div>
                                 </div>
                                 <div className="stat">
+                                    <div className="stat-title">Annual Return</div>
+                                    <div className="stat-value">{formatNumber(annualReturn, "percent", 0, 0)}</div>
+                                </div>
+                                <div className="stat">
                                     <div className="stat-title">Duration</div>
                                     <div className="stat-value">
                                         {convertDuration(dayjs(currentDay).diff(startingDay, "month"))}
@@ -411,7 +420,7 @@ export default function Home() {
                     <div className="flex gap-4">
                         <div className="stat max-w-40">
                             <div className="stat-title">Close</div>
-                            <div className="stat-value">{getClosePrice(activeTicker)}</div>
+                            <div className="stat-value">{formatNumber(getClosePrice(activeTicker))}</div>
                         </div>
                         <div className="flex flex-col">
                             <button className="btn m-1 bg-green-800 w-max" onClick={buy}>
