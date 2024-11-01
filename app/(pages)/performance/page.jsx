@@ -1,9 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 
 export default function Performance() {
-    const performanceData = JSON.parse(localStorage.getItem("performanceData"));
+    const [performanceData, setPerformanceData] = useState([]);
+
+    useEffect(() => {
+        setPerformanceData(JSON.parse(localStorage.getItem("performanceData")));
+    }, []);
+
     return (
         <>
             <div className="flex justify-center">Performance</div>
