@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 export default function Navbar({ children }) {
@@ -31,7 +33,24 @@ export default function Navbar({ children }) {
                             </Link>
                         </div>
                         <div className="hidden flex-none lg:block">
-                            <ul className="menu menu-horizontal">{/* Navbar menu content here */}</ul>
+                            <ul className="menu menu-horizontal gap-4">
+                                {/* Navbar menu content here */}
+                                <li>
+                                    <Link href={"/performance"}>Performance</Link>
+                                </li>
+                                <li>
+                                    <Link
+                                        href={"/"}
+                                        onClick={() => {
+                                            if (window.location.pathname === "/") {
+                                                window.location.reload();
+                                            }
+                                        }}
+                                    >
+                                        New Game
+                                    </Link>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                     {/* Page content here */}
