@@ -14,7 +14,7 @@ export default function Performance() {
         <>
             <div className="flex justify-center">Performance</div>
             <LineChart width={1500} height={900} data={performanceData}>
-                <XAxis hide dataKey={"c"} />
+                <XAxis dataKey={"duration"} />
                 <YAxis />
                 <Tooltip isAnimationActive={false} />
                 <Line isAnimationActive={false} type="monotone" dataKey={"SPY"} stroke="#8884d8" dot={false} />

@@ -207,6 +207,7 @@ export default function Home() {
                 performanceData.push({
                     SPY: Number(formatNumber(spyReturn)),
                     netWorth: Number(formatNumber(netWorthReturn)),
+                    duration: netWorthHistory[i].duration,
                 });
             }
             localStorage.setItem("performanceData", JSON.stringify(performanceData));
@@ -338,6 +339,7 @@ export default function Home() {
                 {
                     netWorth: Math.floor(cash + equity),
                     spyPrice: spyData.bars.SPY[index - 1].c,
+                    duration: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
                 },
             ]);
         }
