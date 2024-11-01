@@ -143,42 +143,48 @@ export default function Home() {
             setCurrentDay(spyData?.bars?.SPY[index].t);
             setSPYChartData([
                 ...spyChartData,
-                { t: formatNumber(spyData.bars.SPY[index].c, "decimal", 0, 0), c: spyData.bars.SPY[index].c },
+                { t: convertDuration(dayjs(currentDay).diff(startingDay, "month")), c: spyData.bars.SPY[index].c },
             ]);
             if (tqqqData?.bars?.TQQQ?.length && index < tqqqData?.bars?.TQQQ.length) {
                 setTQQQChartData([
                     ...tqqqChartData,
-                    { t: formatNumber(tqqqData.bars.TQQQ[index].c, "decimal", 0, 0), c: tqqqData.bars.TQQQ[index].c },
+                    {
+                        t: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
+                        c: tqqqData.bars.TQQQ[index].c,
+                    },
                 ]);
             }
             if (nflxData?.bars?.NFLX?.length && index < nflxData?.bars?.NFLX.length) {
                 setNFLXChartData([
                     ...nflxChartData,
-                    { t: formatNumber(nflxData.bars.NFLX[index].c, "decimal", 0, 0), c: nflxData.bars.NFLX[index].c },
+                    {
+                        t: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
+                        c: nflxData.bars.NFLX[index].c,
+                    },
                 ]);
             }
             if (tltData?.bars?.TLT?.length && index < tltData?.bars?.TLT.length) {
                 setTLTChartData([
                     ...tltChartData,
-                    { t: formatNumber(tltData.bars.TLT[index].c, "decimal", 0, 0), c: tltData.bars.TLT[index].c },
+                    { t: convertDuration(dayjs(currentDay).diff(startingDay, "month")), c: tltData.bars.TLT[index].c },
                 ]);
             }
             if (bacData?.bars?.BAC?.length && index < bacData?.bars?.BAC.length) {
                 setBACChartData([
                     ...bacChartData,
-                    { t: formatNumber(bacData.bars.BAC[index].c, "decimal", 0, 0), c: bacData.bars.BAC[index].c },
+                    { t: convertDuration(dayjs(currentDay).diff(startingDay, "month")), c: bacData.bars.BAC[index].c },
                 ]);
             }
             if (lplData?.bars?.LPL?.length && index < lplData?.bars?.LPL.length) {
                 setLPLChartData([
                     ...lplChartData,
-                    { t: formatNumber(lplData.bars.LPL[index].c, "decimal", 0, 0), c: lplData.bars.LPL[index].c },
+                    { t: convertDuration(dayjs(currentDay).diff(startingDay, "month")), c: lplData.bars.LPL[index].c },
                 ]);
             }
             if (koData?.bars?.KO?.length && index < koData?.bars?.KO.length) {
                 setKOChartData([
                     ...koChartData,
-                    { t: formatNumber(koData.bars.KO[index].c, "decimal", 0, 0), c: koData.bars.KO[index].c },
+                    { t: convertDuration(dayjs(currentDay).diff(startingDay, "month")), c: koData.bars.KO[index].c },
                 ]);
             }
             setIndex(index + 1);
@@ -354,49 +360,49 @@ export default function Home() {
                 setCurrentDay(spyData?.bars?.SPY[0].t);
                 setSPYChartData(
                     spyData?.bars?.SPY.slice(0, startingIndex).map((day) => {
-                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                        return { c: day.c };
                     }),
                 );
             }
             if (tqqqData?.bars?.TQQQ?.length) {
                 setTQQQChartData(
                     tqqqData?.bars?.TQQQ.slice(0, startingIndex).map((day) => {
-                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                        return { c: day.c };
                     }),
                 );
             }
             if (nflxData?.bars?.NFLX?.length) {
                 setNFLXChartData(
                     nflxData?.bars?.NFLX.slice(0, startingIndex).map((day) => {
-                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                        return { c: day.c };
                     }),
                 );
             }
             if (tltData?.bars?.TLT?.length) {
                 setTLTChartData(
                     tltData?.bars?.TLT.slice(0, startingIndex).map((day) => {
-                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                        return { c: day.c };
                     }),
                 );
             }
             if (bacData?.bars?.BAC?.length) {
                 setBACChartData(
                     bacData?.bars?.BAC.slice(0, startingIndex).map((day) => {
-                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                        return { c: day.c };
                     }),
                 );
             }
             if (lplData?.bars?.LPL?.length) {
                 setLPLChartData(
                     lplData?.bars?.LPL.slice(0, startingIndex).map((day) => {
-                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                        return { c: day.c };
                     }),
                 );
             }
             if (koData?.bars?.KO?.length) {
                 setKOChartData(
                     koData?.bars?.KO.slice(0, startingIndex).map((day) => {
-                        return { t: formatNumber(day.c, "decimal", 0, 0), c: day.c };
+                        return { c: day.c };
                     }),
                 );
             }
