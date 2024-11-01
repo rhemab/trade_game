@@ -71,6 +71,7 @@ export default function Home() {
     const [startGame, setStartGame] = useState(false);
     const [gameOver, setGameOver] = useState(false);
     const [netWorthHistory, setNetWorthHistory] = useState([]);
+    const [userData, setUserData] = useState({});
 
     function buy() {
         const sharePrice = Number(getClosePrice(activeTicker));
@@ -140,6 +141,14 @@ export default function Home() {
 
     function addChartData() {
         if (spyData?.bars && index < spyData?.bars?.SPY.length) {
+            setNetWorthHistory([
+                ...netWorthHistory,
+                {
+                    netWorth: Math.floor(cash + equity),
+                    spyPrice: spyData.bars.SPY[index - 1].c,
+                    duration: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
+                },
+            ]);
             setCurrentDay(spyData?.bars?.SPY[index].t);
             setSPYChartData([
                 ...spyChartData,
@@ -190,12 +199,76 @@ export default function Home() {
             setIndex(index + 1);
         } else {
             // game over
-            // calculate performance
+            // calculate and save performance data
             setGameOver(true);
             let performanceData = [];
             let spyReturn = 0;
             let netWorthReturn = 0;
+
+            let spyLocalData = [];
+            let tqqqLocalData = [];
+            let nflxLocalData = [];
+            let tltLocalData = [];
+            let lplLocalData = [];
+            let koLocalData = [];
+            let bacLocalData = [];
+
             for (let i = 1; i < netWorthHistory.length; i++) {
+                // stock data
+                spyLocalData.push({
+                    c: spyData.bars.SPY[i].c,
+                    t:
+                        startingIndex > index
+                            ? ""
+                            : convertDuration(dayjs(spyData.bars.SPY[startingIndex + i].t).diff(startingDay, "month")),
+                });
+                tqqqLocalData.push({
+                    c: tqqqData.bars.TQQQ[i].c,
+                    t:
+                        startingIndex > index
+                            ? ""
+                            : convertDuration(
+                                  dayjs(tqqqData.bars.TQQQ[startingIndex + i].t).diff(startingDay, "month"),
+                              ),
+                });
+                nflxLocalData.push({
+                    c: nflxData.bars.NFLX[i].c,
+                    t:
+                        startingIndex > index
+                            ? ""
+                            : convertDuration(
+                                  dayjs(nflxData.bars.NFLX[startingIndex + i].t).diff(startingDay, "month"),
+                              ),
+                });
+                tltLocalData.push({
+                    c: tltData.bars.TLT[i].c,
+                    t:
+                        startingIndex > index
+                            ? ""
+                            : convertDuration(dayjs(tltData.bars.TLT[startingIndex + i].t).diff(startingDay, "month")),
+                });
+                bacLocalData.push({
+                    c: bacData.bars.BAC[i].c,
+                    t:
+                        startingIndex > index
+                            ? ""
+                            : convertDuration(dayjs(bacData.bars.BAC[startingIndex + i].t).diff(startingDay, "month")),
+                });
+                koLocalData.push({
+                    c: koData.bars.KO[i].c,
+                    t:
+                        startingIndex > index
+                            ? ""
+                            : convertDuration(dayjs(koData.bars.KO[startingIndex + i].t).diff(startingDay, "month")),
+                });
+                lplLocalData.push({
+                    c: lplData.bars.LPL[i].c,
+                    t:
+                        startingIndex > index
+                            ? ""
+                            : convertDuration(dayjs(lplData.bars.LPL[startingIndex + i].t).diff(startingDay, "month")),
+                });
+                // performance data
                 spyReturn += Number(
                     formatNumber(
                         ((netWorthHistory[i].spyPrice - netWorthHistory[i - 1].spyPrice) /
@@ -216,67 +289,84 @@ export default function Home() {
                     duration: netWorthHistory[i].duration,
                 });
             }
+            // set local storage items
             localStorage.setItem("performanceData", JSON.stringify(performanceData));
+            localStorage.setItem(
+                "userData",
+                JSON.stringify({
+                    netWorth: cash + equity,
+                    totalReturn,
+                    annualReturn,
+                    duration: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
+                }),
+            );
+            localStorage.setItem("spyData", JSON.stringify(spyLocalData));
+            localStorage.setItem("tqqqData", JSON.stringify(tqqqLocalData));
+            localStorage.setItem("nflxData", JSON.stringify(nflxLocalData));
+            localStorage.setItem("tltData", JSON.stringify(tltLocalData));
+            localStorage.setItem("bacData", JSON.stringify(bacLocalData));
+            localStorage.setItem("lplData", JSON.stringify(lplLocalData));
+            localStorage.setItem("koData", JSON.stringify(koLocalData));
         }
     }
 
     function getClosePrice(ticker) {
         switch (ticker) {
             case "SPY":
-                if (spyData?.bars[ticker]?.length) {
+                if (spyData?.bars?.SPY?.length) {
                     let indexOffset = 1;
-                    while (index - indexOffset >= spyData.bars[ticker].length) {
+                    while (index - indexOffset >= spyData.bars.SPY.length) {
                         indexOffset++;
                     }
-                    return spyData?.bars[ticker][index - indexOffset].c;
+                    return spyData?.bars.SPY[index - indexOffset].c;
                 }
             case "TQQQ":
-                if (tqqqData?.bars[ticker]?.length) {
+                if (tqqqData?.bars?.TQQQ?.length) {
                     let indexOffset = 1;
-                    while (index - indexOffset >= tqqqData.bars[ticker].length) {
+                    while (index - indexOffset >= tqqqData.bars.TQQQ.length) {
                         indexOffset++;
                     }
-                    return tqqqData?.bars[ticker][index - indexOffset].c;
+                    return tqqqData?.bars.TQQQ[index - indexOffset].c;
                 }
             case "NFLX":
-                if (nflxData?.bars[ticker]?.length) {
+                if (nflxData?.bars?.NFLX?.length) {
                     let indexOffset = 1;
-                    while (index - indexOffset >= nflxData.bars[ticker].length) {
+                    while (index - indexOffset >= nflxData.bars.NFLX.length) {
                         indexOffset++;
                     }
-                    return nflxData?.bars[ticker][index - indexOffset].c;
+                    return nflxData?.bars.NFLX[index - indexOffset].c;
                 }
             case "TLT":
-                if (tltData?.bars[ticker]?.length) {
+                if (tltData?.bars?.TLT?.length) {
                     let indexOffset = 1;
-                    while (index - indexOffset >= tltData.bars[ticker].length) {
+                    while (index - indexOffset >= tltData.bars.TLT.length) {
                         indexOffset++;
                     }
-                    return tltData?.bars[ticker][index - indexOffset].c;
+                    return tltData?.bars.TLT[index - indexOffset].c;
                 }
             case "LPL":
-                if (lplData?.bars[ticker]?.length) {
+                if (lplData?.bars?.LPL?.length) {
                     let indexOffset = 1;
-                    while (index - indexOffset >= lplData.bars[ticker].length) {
+                    while (index - indexOffset >= lplData.bars.LPL.length) {
                         indexOffset++;
                     }
-                    return lplData?.bars[ticker][index - indexOffset].c;
+                    return lplData?.bars.LPL[index - indexOffset].c;
                 }
             case "BAC":
-                if (bacData?.bars[ticker]?.length) {
+                if (bacData?.bars?.BAC?.length) {
                     let indexOffset = 1;
-                    while (index - indexOffset >= bacData.bars[ticker].length) {
+                    while (index - indexOffset >= bacData.bars.BAC.length) {
                         indexOffset++;
                     }
-                    return bacData?.bars[ticker][index - indexOffset].c;
+                    return bacData?.bars.BAC[index - indexOffset].c;
                 }
             case "KO":
-                if (koData?.bars[ticker]?.length) {
+                if (koData?.bars?.KO?.length) {
                     let indexOffset = 1;
-                    while (index - indexOffset >= koData.bars[ticker].length) {
+                    while (index - indexOffset >= koData.bars.KO.length) {
                         indexOffset++;
                     }
-                    return koData?.bars[ticker][index - indexOffset].c;
+                    return koData?.bars.KO[index - indexOffset].c;
                 }
         }
     }
@@ -290,19 +380,52 @@ export default function Home() {
     }
 
     useEffect(() => {
-        if (!loadingSpy && !loadingTqqq && !loadingNflx && !loadingBac && !loadingTlt && !loadingLpl && !loadingKo) {
+        if (
+            (!loadingSpy && !loadingTqqq && !loadingNflx && !loadingBac && !loadingTlt && !loadingLpl && !loadingKo) ||
+            localStorage.getItem("userData")
+        ) {
             setLoading(false);
         }
     }, [loadingSpy, loadingTqqq, loadingNflx, loadingBac, loadingTlt, loadingLpl, loadingKo]);
 
+    // on page load get stock data
     useEffect(() => {
-        getSpyData();
-        getTqqqData();
-        getNflxData();
-        getBacData();
-        getTltData();
-        getLplData();
-        getKoData();
+        if (!localStorage.getItem("spyData")) {
+            getSpyData();
+        } else {
+            setSPYChartData(JSON.parse(localStorage.getItem("spyData")));
+        }
+        if (!localStorage.getItem("tqqqData")) {
+            getTqqqData();
+        } else {
+            setTQQQChartData(JSON.parse(localStorage.getItem("tqqqData")));
+        }
+        if (!localStorage.getItem("nflxData")) {
+            getNflxData();
+        } else {
+            setNFLXChartData(JSON.parse(localStorage.getItem("nflxData")));
+        }
+        if (!localStorage.getItem("bacData")) {
+            getBacData();
+        } else {
+            setBACChartData(JSON.parse(localStorage.getItem("bacData")));
+        }
+        if (!localStorage.getItem("tltData")) {
+            getTltData();
+        } else {
+            setTLTChartData(JSON.parse(localStorage.getItem("tltData")));
+        }
+        if (!localStorage.getItem("lplData")) {
+            getLplData();
+        } else {
+            setLPLChartData(JSON.parse(localStorage.getItem("lplData")));
+        }
+        if (!localStorage.getItem("koData")) {
+            getKoData();
+        } else {
+            setKOChartData(JSON.parse(localStorage.getItem("koData")));
+        }
+        setUserData(JSON.parse(localStorage.getItem("userData")));
     }, []);
 
     // set equity
@@ -339,25 +462,14 @@ export default function Home() {
 
         setTotalReturn(newTotalReturn);
         setAnnualReturn(newAnnualReturn);
-        if (spyData?.bars && index < spyData?.bars?.SPY.length) {
-            setNetWorthHistory([
-                ...netWorthHistory,
-                {
-                    netWorth: Math.floor(cash + equity),
-                    spyPrice: spyData.bars.SPY[index - 1].c,
-                    duration: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
-                },
-            ]);
-        }
     }, [equity]);
 
     // set initial stock data when loaded
     useEffect(() => {
         if (!loading) {
             if (spyData?.bars?.SPY?.length) {
-                localStorage.setItem("spyData", JSON.stringify(spyData.bars.SPY));
                 setStartingDay(spyData?.bars?.SPY[startingIndex].t);
-                setCurrentDay(spyData?.bars?.SPY[0].t);
+                setCurrentDay(spyData?.bars?.SPY[startingIndex].t);
                 setSPYChartData(
                     spyData?.bars?.SPY.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -365,6 +477,7 @@ export default function Home() {
                 );
             }
             if (tqqqData?.bars?.TQQQ?.length) {
+                // localStorage.setItem("tqqqData", JSON.stringify(tqqqData.bars.TQQQ));
                 setTQQQChartData(
                     tqqqData?.bars?.TQQQ.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -372,6 +485,7 @@ export default function Home() {
                 );
             }
             if (nflxData?.bars?.NFLX?.length) {
+                // localStorage.setItem("nflxData", JSON.stringify(nflxData.bars.NFLX));
                 setNFLXChartData(
                     nflxData?.bars?.NFLX.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -379,6 +493,7 @@ export default function Home() {
                 );
             }
             if (tltData?.bars?.TLT?.length) {
+                // localStorage.setItem("tltData", JSON.stringify(tltData.bars.TLT));
                 setTLTChartData(
                     tltData?.bars?.TLT.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -386,6 +501,7 @@ export default function Home() {
                 );
             }
             if (bacData?.bars?.BAC?.length) {
+                // localStorage.setItem("bacData", JSON.stringify(bacData.bars.BAC));
                 setBACChartData(
                     bacData?.bars?.BAC.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -393,6 +509,7 @@ export default function Home() {
                 );
             }
             if (lplData?.bars?.LPL?.length) {
+                // localStorage.setItem("lplData", JSON.stringify(lplData.bars.LPL));
                 setLPLChartData(
                     lplData?.bars?.LPL.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -400,6 +517,7 @@ export default function Home() {
                 );
             }
             if (koData?.bars?.KO?.length) {
+                // localStorage.setItem("koData", JSON.stringify(koData.bars.KO));
                 setKOChartData(
                     koData?.bars?.KO.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -430,36 +548,46 @@ export default function Home() {
                             <div className="stats shadow">
                                 <div className="stat w-60">
                                     <div className="stat-title">Net Worth</div>
-                                    <div className="stat-value">{formatCurrency(cash + equity, 0)}</div>
+                                    <div className="stat-value">
+                                        {userData
+                                            ? formatCurrency(userData?.netWorth, 0)
+                                            : formatCurrency(cash + equity, 0)}
+                                    </div>
                                 </div>
                                 <div className="stat w-60">
                                     <div className="stat-title">Cash</div>
-                                    <div className="stat-value">{formatCurrency(cash, 0)}</div>
+                                    <div className="stat-value">
+                                        {userData ? formatCurrency(userData?.netWorth, 0) : formatCurrency(cash, 0)}
+                                    </div>
                                 </div>
                                 <div className="stat flex">
                                     <div className="stat">
                                         <div className="stat-title w-36">Total Return</div>
-                                        <div className="stat-value">{formatNumber(totalReturn, "percent", 0, 0)}</div>
+                                        <div className="stat-value">
+                                            {userData
+                                                ? formatNumber(userData?.totalReturn, "percent", 0, 0)
+                                                : formatNumber(totalReturn, "percent", 0, 0)}
+                                        </div>
                                     </div>
                                     <div className="stat">
                                         <div className="stat-title w-28">Annual Return</div>
                                         <div className="stat-value">
-                                            {formatNumber(startGame ? annualReturn : 0, "percent", 0, 0)}
+                                            {userData
+                                                ? formatNumber(userData?.annualReturn, "percent", 0, 0)
+                                                : formatNumber(startGame ? annualReturn : 0, "percent", 0, 0)}
                                         </div>
                                     </div>
                                     <div className="stat">
                                         <div className="stat-title">Duration</div>
                                         <div className="stat-value">
-                                            {convertDuration(
-                                                dayjs(currentDay).diff(startingDay, "month") >= 0
-                                                    ? dayjs(currentDay).diff(startingDay, "month")
-                                                    : 12,
-                                            )}
+                                            {userData
+                                                ? userData?.duration
+                                                : convertDuration(dayjs(currentDay).diff(startingDay, "month"))}
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            {startGame ? (
+                            {!userData && startGame ? (
                                 <div className="flex items-center">
                                     <button
                                         className={speed == 250 ? "btn btn-success" : "btn"}
@@ -481,17 +609,22 @@ export default function Home() {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="flex items-center">
-                                    <button className="btn bg-success text-white" onClick={() => setStartGame(true)}>
-                                        Start Game
-                                    </button>
-                                </div>
+                                !userData && (
+                                    <div className="flex items-center">
+                                        <button
+                                            className="btn bg-success text-white"
+                                            onClick={() => setStartGame(true)}
+                                        >
+                                            Start Game
+                                        </button>
+                                    </div>
+                                )
                             )}
                         </div>
                         <div className="flex gap-4">
                             <div className="stat max-w-40">
                                 <div className="stat-title">Close</div>
-                                <div className="stat-value">{formatNumber(getClosePrice(activeTicker))}</div>
+                                <div className="stat-value">{formatNumber(getClosePrice(activeTicker) ?? 0)}</div>
                             </div>
                             <div className="flex flex-col">
                                 <button className="btn m-1 bg-green-800 w-24" onClick={buy}>

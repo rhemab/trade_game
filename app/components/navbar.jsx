@@ -36,12 +36,16 @@ export default function Navbar({ children }) {
                             <ul className="menu menu-horizontal gap-4">
                                 {/* Navbar menu content here */}
                                 <li>
+                                    <Link href={"/"}>Game</Link>
+                                </li>
+                                <li>
                                     <Link href={"/performance"}>Performance</Link>
                                 </li>
                                 <li>
                                     <Link
                                         href={"/"}
                                         onClick={() => {
+                                            localStorage.clear();
                                             if (window.location.pathname === "/") {
                                                 window.location.reload();
                                             }
