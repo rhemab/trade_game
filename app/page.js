@@ -356,7 +356,7 @@ export default function Home() {
         if (!loading) {
             if (spyData?.bars?.SPY?.length) {
                 localStorage.setItem("spyData", JSON.stringify(spyData.bars.SPY));
-                setStartingDay(spyData?.bars?.SPY[0].t);
+                setStartingDay(spyData?.bars?.SPY[startingIndex].t);
                 setCurrentDay(spyData?.bars?.SPY[0].t);
                 setSPYChartData(
                     spyData?.bars?.SPY.slice(0, startingIndex).map((day) => {
@@ -443,12 +443,18 @@ export default function Home() {
                                     </div>
                                     <div className="stat">
                                         <div className="stat-title w-28">Annual Return</div>
-                                        <div className="stat-value">{formatNumber(annualReturn, "percent", 0, 0)}</div>
+                                        <div className="stat-value">
+                                            {formatNumber(startGame ? annualReturn : 0, "percent", 0, 0)}
+                                        </div>
                                     </div>
                                     <div className="stat">
                                         <div className="stat-title">Duration</div>
                                         <div className="stat-value">
-                                            {convertDuration(dayjs(currentDay).diff(startingDay, "month"))}
+                                            {convertDuration(
+                                                dayjs(currentDay).diff(startingDay, "month") >= 0
+                                                    ? dayjs(currentDay).diff(startingDay, "month")
+                                                    : 12,
+                                            )}
                                         </div>
                                     </div>
                                 </div>
