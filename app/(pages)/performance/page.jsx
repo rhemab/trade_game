@@ -17,8 +17,22 @@ export default function Performance() {
                 <XAxis dataKey={"duration"} />
                 <YAxis />
                 <Tooltip isAnimationActive={false} />
-                <Line isAnimationActive={false} type="monotone" dataKey={"SPY"} stroke="#8884d8" dot={false} />
-                <Line isAnimationActive={false} type="monotone" dataKey={"netWorth"} stroke="#82ca9d" dot={false} />
+                <Line
+                    isAnimationActive={false}
+                    type="monotone"
+                    dataKey={"SPY"}
+                    stroke="#8884d8"
+                    dot={false}
+                    unit={"%"}
+                />
+                <Line
+                    isAnimationActive={false}
+                    type="monotone"
+                    dataKey={"netWorth"}
+                    stroke="#82ca9d"
+                    dot={false}
+                    unit={"%"}
+                />
             </LineChart>
         </>
     );
