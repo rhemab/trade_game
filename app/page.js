@@ -7,7 +7,7 @@ import useFormat from "./hooks/useFormat";
 import dayjs from "dayjs";
 
 let spyEquity = 0;
-let tqqqEquity = 0;
+let FEquity = 0;
 let nflxEquity = 0;
 let tltEquity = 0;
 let bacEquity = 0;
@@ -19,15 +19,15 @@ const startingCash = 100000;
 const startingIndex = 254;
 let index = startingIndex;
 let speed = 250;
-const tickers = ["SPY", "TQQQ", "NFLX", "TLT", "BAC", "LPL", "KO"];
-const fakeTickers = { SPY: "ETF", TQQQ: "3xETF", NFLX: "TV", TLT: "BONDS", BAC: "BANK", LPL: "PHONE", KO: "DRINK" };
+const tickers = ["SPY", "F", "NFLX", "TLT", "BAC", "LPL", "KO"];
+const fakeTickers = { SPY: "ETF", F: "CARS", NFLX: "TV", TLT: "BONDS", BAC: "BANK", LPL: "PHONE", KO: "DRINK" };
 
 export default function Home() {
     const [loadingSpy, spyError, spyData, getSpyData] = useAlpacaApi(
         `stocks/bars?symbols=SPY&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
     );
-    const [loadingTqqq, tqqqError, tqqqData, getTqqqData] = useAlpacaApi(
-        `stocks/bars?symbols=TQQQ&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
+    const [loadingF, fError, fData, getFData] = useAlpacaApi(
+        `stocks/bars?symbols=F&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
     );
     const [loadingNflx, nflxError, nflxData, getNflxData] = useAlpacaApi(
         `stocks/bars?symbols=NFLX&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
@@ -46,7 +46,7 @@ export default function Home() {
     );
     const { formatCurrency, formatNumber, convertDuration } = useFormat();
     const [spyChartData, setSPYChartData] = useState([]);
-    const [tqqqChartData, setTQQQChartData] = useState([]);
+    const [fChartData, setfChartData] = useState([]);
     const [nflxChartData, setNFLXChartData] = useState([]);
     const [tltChartData, setTLTChartData] = useState([]);
     const [bacChartData, setBACChartData] = useState([]);
@@ -55,7 +55,7 @@ export default function Home() {
     const [cash, setCash] = useState(startingCash);
     const [shares, setShares] = useState({
         SPY: { shares: 0, price: 0, amountInvested: 0 },
-        TQQQ: { shares: 0, price: 0, amountInvested: 0 },
+        F: { shares: 0, price: 0, amountInvested: 0 },
         NFLX: { shares: 0, price: 0, amountInvested: 0 },
         TLT: { shares: 0, price: 0, amountInvested: 0 },
         BAC: { shares: 0, price: 0, amountInvested: 0 },
@@ -216,12 +216,12 @@ export default function Home() {
                 ...spyChartData,
                 { t: convertDuration(dayjs(currentDay).diff(startingDay, "month")), c: spyData.bars.SPY[index].c },
             ]);
-            if (tqqqData?.bars?.TQQQ?.length && index < tqqqData?.bars?.TQQQ.length) {
-                setTQQQChartData([
-                    ...tqqqChartData,
+            if (fData?.bars?.F?.length && index < fData?.bars?.F.length) {
+                setfChartData([
+                    ...fChartData,
                     {
                         t: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
-                        c: tqqqData.bars.TQQQ[index].c,
+                        c: fData.bars.F[index].c,
                     },
                 ]);
             }
@@ -268,7 +268,7 @@ export default function Home() {
             let netWorthReturn = 0;
 
             let spyLocalData = [];
-            let tqqqLocalData = [];
+            let FLocalData = [];
             let nflxLocalData = [];
             let tltLocalData = [];
             let lplLocalData = [];
@@ -286,12 +286,12 @@ export default function Home() {
                             ? ""
                             : convertDuration(dayjs(spyData.bars.SPY[i].t).diff(startingDay, "month")),
                 });
-                tqqqLocalData.push({
-                    c: tqqqData.bars.TQQQ[i].c,
+                FLocalData.push({
+                    c: fData.bars.F[i].c,
                     t:
                         startingIndex > index
                             ? ""
-                            : convertDuration(dayjs(tqqqData.bars.TQQQ[i].t).diff(startingDay, "month")),
+                            : convertDuration(dayjs(fData.bars.F[i].t).diff(startingDay, "month")),
                 });
                 nflxLocalData.push({
                     c: nflxData.bars.NFLX[i].c,
@@ -362,7 +362,7 @@ export default function Home() {
             );
 
             localStorage.setItem("spyData", JSON.stringify(spyLocalData));
-            localStorage.setItem("tqqqData", JSON.stringify(tqqqLocalData));
+            localStorage.setItem("fData", JSON.stringify(FLocalData));
             localStorage.setItem("nflxData", JSON.stringify(nflxLocalData));
             localStorage.setItem("tltData", JSON.stringify(tltLocalData));
             localStorage.setItem("bacData", JSON.stringify(bacLocalData));
@@ -381,13 +381,13 @@ export default function Home() {
                     }
                     return spyData?.bars.SPY[index - indexOffset].c;
                 }
-            case "TQQQ":
-                if (tqqqData?.bars?.TQQQ?.length) {
+            case "F":
+                if (fData?.bars?.F?.length) {
                     let indexOffset = 1;
-                    while (index - indexOffset >= tqqqData.bars.TQQQ.length) {
+                    while (index - indexOffset >= fData.bars.F.length) {
                         indexOffset++;
                     }
-                    return tqqqData?.bars.TQQQ[index - indexOffset].c;
+                    return fData?.bars.F[index - indexOffset].c;
                 }
             case "NFLX":
                 if (nflxData?.bars?.NFLX?.length) {
@@ -442,12 +442,12 @@ export default function Home() {
 
     useEffect(() => {
         if (
-            (!loadingSpy && !loadingTqqq && !loadingNflx && !loadingBac && !loadingTlt && !loadingLpl && !loadingKo) ||
+            (!loadingSpy && !loadingF && !loadingNflx && !loadingBac && !loadingTlt && !loadingLpl && !loadingKo) ||
             localStorage.getItem("userData")
         ) {
             setLoading(false);
         }
-    }, [loadingSpy, loadingTqqq, loadingNflx, loadingBac, loadingTlt, loadingLpl, loadingKo]);
+    }, [loadingSpy, loadingF, loadingNflx, loadingBac, loadingTlt, loadingLpl, loadingKo]);
 
     // on page load get stock data
     useEffect(() => {
@@ -456,10 +456,10 @@ export default function Home() {
         } else {
             setSPYChartData(JSON.parse(localStorage.getItem("spyData")));
         }
-        if (!localStorage.getItem("tqqqData")) {
-            getTqqqData();
+        if (!localStorage.getItem("fData")) {
+            getFData();
         } else {
-            setTQQQChartData(JSON.parse(localStorage.getItem("tqqqData")));
+            setfChartData(JSON.parse(localStorage.getItem("fData")));
         }
         if (!localStorage.getItem("nflxData")) {
             getNflxData();
@@ -494,8 +494,8 @@ export default function Home() {
         if (spyData?.bars) {
             spyEquity = Math.abs(shares.SPY.shares) * Number(getClosePrice("SPY"));
         }
-        if (tqqqData?.bars) {
-            tqqqEquity = Math.abs(shares.TQQQ.shares) * Number(getClosePrice("TQQQ"));
+        if (fData?.bars) {
+            FEquity = Math.abs(shares.F.shares) * Number(getClosePrice("F"));
         }
         if (nflxData?.bars) {
             nflxEquity = Math.abs(shares.NFLX.shares) * Number(getClosePrice("NFLX"));
@@ -512,7 +512,7 @@ export default function Home() {
         if (koData?.bars) {
             koEquity = Math.abs(shares.KO.shares) * Number(getClosePrice("KO"));
         }
-        setEquity(spyEquity + tqqqEquity + nflxEquity + tltEquity + bacEquity + lplEquity + koEquity);
+        setEquity(spyEquity + FEquity + nflxEquity + tltEquity + bacEquity + lplEquity + koEquity);
     }, [index, shares]);
 
     // set return
@@ -537,16 +537,15 @@ export default function Home() {
                     }),
                 );
             }
-            if (tqqqData?.bars?.TQQQ?.length) {
-                // localStorage.setItem("tqqqData", JSON.stringify(tqqqData.bars.TQQQ));
-                setTQQQChartData(
-                    tqqqData?.bars?.TQQQ.slice(0, startingIndex).map((day) => {
+            if (fData?.bars?.F?.length) {
+                console.log(fData);
+                setfChartData(
+                    fData?.bars?.F.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
                     }),
                 );
             }
             if (nflxData?.bars?.NFLX?.length) {
-                // localStorage.setItem("nflxData", JSON.stringify(nflxData.bars.NFLX));
                 setNFLXChartData(
                     nflxData?.bars?.NFLX.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -554,7 +553,6 @@ export default function Home() {
                 );
             }
             if (tltData?.bars?.TLT?.length) {
-                // localStorage.setItem("tltData", JSON.stringify(tltData.bars.TLT));
                 setTLTChartData(
                     tltData?.bars?.TLT.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -562,7 +560,6 @@ export default function Home() {
                 );
             }
             if (bacData?.bars?.BAC?.length) {
-                // localStorage.setItem("bacData", JSON.stringify(bacData.bars.BAC));
                 setBACChartData(
                     bacData?.bars?.BAC.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -570,7 +567,6 @@ export default function Home() {
                 );
             }
             if (lplData?.bars?.LPL?.length) {
-                // localStorage.setItem("lplData", JSON.stringify(lplData.bars.LPL));
                 setLPLChartData(
                     lplData?.bars?.LPL.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -578,7 +574,6 @@ export default function Home() {
                 );
             }
             if (koData?.bars?.KO?.length) {
-                // localStorage.setItem("koData", JSON.stringify(koData.bars.KO));
                 setKOChartData(
                     koData?.bars?.KO.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -601,7 +596,7 @@ export default function Home() {
             <div className="flex justify-center">
                 {loading ? (
                     <div className="loading loading-spinner"></div>
-                ) : spyError || tqqqError || nflxError || tltError || lplError || bacError || koError ? (
+                ) : spyError || fError || nflxError || tltError || lplError || bacError || koError ? (
                     <div>Error fetching data</div>
                 ) : (
                     <div>
@@ -761,9 +756,7 @@ export default function Home() {
                             {activeTicker == "SPY" && (
                                 <StockChart chartData={spyChartData} xDataKey={"t"} yDataKey={"c"} />
                             )}
-                            {activeTicker == "TQQQ" && (
-                                <StockChart chartData={tqqqChartData} xDataKey={"t"} yDataKey={"c"} />
-                            )}
+                            {activeTicker == "F" && <StockChart chartData={fChartData} xDataKey={"t"} yDataKey={"c"} />}
                             {activeTicker == "NFLX" && (
                                 <StockChart chartData={nflxChartData} xDataKey={"t"} yDataKey={"c"} />
                             )}
