@@ -1,9 +1,11 @@
 "use client";
 
+import useFormat from "@/app/hooks/useFormat";
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
 
 export default function Performance() {
+    const { formatNumber } = useFormat();
     const [performanceData, setPerformanceData] = useState([]);
     const [tradeHistory, setTradeHistory] = useState([]);
 
@@ -47,6 +49,7 @@ export default function Performance() {
                                 <th>Type</th>
                                 <th>Shares</th>
                                 <th>Price</th>
+                                <th>Return</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -54,9 +57,16 @@ export default function Performance() {
                                 <tr key={index}>
                                     <th>{index + 1}</th>
                                     <td>{trade.ticker}</td>
-                                    <td>{trade.type}</td>
+                                    <td className={trade.type === "buy" ? "text-success" : "text-error"}>
+                                        {trade.type}
+                                    </td>
                                     <td>{trade.shares}</td>
                                     <td>{trade.price}</td>
+                                    {trade?.return && (
+                                        <td className={trade.return > 0 ? "text-success" : "text-error"}>
+                                            {formatNumber(trade.return, "percent")}
+                                        </td>
+                                    )}
                                 </tr>
                             ))}
                         </tbody>

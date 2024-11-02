@@ -14,8 +14,11 @@ let bacEquity = 0;
 let lplEquity = 0;
 let koEquity = 0;
 
+let gameOver = false;
 const startingCash = 100000;
 const startingIndex = 254;
+let index = startingIndex;
+let speed = 250;
 const tickers = ["SPY", "TQQQ", "NFLX", "TLT", "BAC", "LPL", "KO"];
 const fakeTickers = { SPY: "ETF", TQQQ: "3xETF", NFLX: "TV", TLT: "BONDS", BAC: "BANK", LPL: "PHONE", KO: "DRINK" };
 
@@ -49,8 +52,6 @@ export default function Home() {
     const [bacChartData, setBACChartData] = useState([]);
     const [lplChartData, setLPLChartData] = useState([]);
     const [koChartData, setKOChartData] = useState([]);
-    const [speed, setSpeed] = useState(250);
-    const [index, setIndex] = useState(startingIndex);
     const [cash, setCash] = useState(startingCash);
     const [shares, setShares] = useState({
         SPY: { shares: 0, price: 0, amountInvested: 0 },
@@ -69,9 +70,7 @@ export default function Home() {
     const [currentDay, setCurrentDay] = useState(undefined);
     const [loading, setLoading] = useState(true);
     const [startGame, setStartGame] = useState(false);
-    const [gameOver, setGameOver] = useState(false);
     const [netWorthHistory, setNetWorthHistory] = useState([]);
-    const [tradeHistory, setTradeHistory] = useState([]);
     const [userData, setUserData] = useState({});
 
     function buy() {
@@ -81,6 +80,8 @@ export default function Home() {
             const amountInvested = Number(shares[activeTicker].amountInvested);
             const newInvestment = Number(sharePrice * 100);
             const avgPrice = (amountInvested + newInvestment) / (currentShares + 100);
+            const tradeHistory = JSON.parse(localStorage.getItem("tradeHistory")) ?? [];
+
             setShares({
                 ...shares,
                 [activeTicker]: {
@@ -90,15 +91,18 @@ export default function Home() {
                 },
             });
             setCash(cash - newInvestment);
-            setTradeHistory([
-                ...tradeHistory,
-                {
-                    ticker: activeTicker,
-                    type: "buy",
-                    shares: 100,
-                    price: sharePrice,
-                },
-            ]);
+            localStorage.setItem(
+                "tradeHistory",
+                JSON.stringify([
+                    ...tradeHistory,
+                    {
+                        ticker: activeTicker,
+                        type: "buy",
+                        shares: 100,
+                        price: sharePrice,
+                    },
+                ]),
+            );
         }
     }
 
@@ -108,6 +112,8 @@ export default function Home() {
             const sharePrice = Number(getClosePrice(activeTicker));
             const currentPrice = Number(shares[activeTicker].price);
             const amountInvested = Number(shares[activeTicker].amountInvested);
+            const tradeHistory = JSON.parse(localStorage.getItem("tradeHistory")) ?? [];
+
             setShares({
                 ...shares,
                 [activeTicker]: {
@@ -117,26 +123,33 @@ export default function Home() {
                 },
             });
             setCash(cash + sharePrice * 100);
-            setTradeHistory([
-                ...tradeHistory,
-                {
-                    ticker: activeTicker,
-                    type: "sell",
-                    shares: 100,
-                    price: sharePrice,
-                },
-            ]);
+            localStorage.setItem(
+                "tradeHistory",
+                JSON.stringify([
+                    ...tradeHistory,
+                    {
+                        ticker: activeTicker,
+                        type: "sell",
+                        shares: 100,
+                        price: sharePrice,
+                        return: formatNumber((100 * sharePrice - amountInvested) / amountInvested, "percent"),
+                    },
+                ]),
+            );
         }
     }
 
     function buyMax() {
         const sharePrice = Number(getClosePrice(activeTicker));
         const maxShares = Math.floor(cash / sharePrice);
+
         if (maxShares > 0) {
             const currentShares = shares[activeTicker].shares;
             const amountInvested = Number(shares[activeTicker].amountInvested);
             const newInvestment = Number(sharePrice * maxShares);
             const avgPrice = (amountInvested + newInvestment) / (currentShares + maxShares);
+            const tradeHistory = JSON.parse(localStorage.getItem("tradeHistory")) ?? [];
+
             setShares({
                 ...shares,
                 [activeTicker]: {
@@ -145,34 +158,46 @@ export default function Home() {
                     amountInvested: amountInvested + newInvestment,
                 },
             });
+
             setCash(cash - newInvestment);
-            setTradeHistory([
-                ...tradeHistory,
-                {
-                    ticker: activeTicker,
-                    type: "buy",
-                    shares: maxShares,
-                    price: sharePrice,
-                },
-            ]);
+
+            localStorage.setItem(
+                "tradeHistory",
+                JSON.stringify([
+                    ...tradeHistory,
+                    {
+                        ticker: activeTicker,
+                        type: "buy",
+                        shares: maxShares,
+                        price: sharePrice,
+                    },
+                ]),
+            );
         }
     }
 
-    function sellMax() {
-        const sharePrice = Number(getClosePrice(activeTicker));
-        const numberOfShares = shares[activeTicker].shares;
+    function sellMax(ticker = activeTicker) {
+        const sharePrice = Number(getClosePrice(ticker));
+        const numberOfShares = shares[ticker].shares;
+        const amountInvested = Number(shares[ticker].amountInvested);
+
         if (numberOfShares > 0) {
-            setShares({ ...shares, [activeTicker]: { shares: 0, price: 0, amountInvested: 0 } });
+            setShares({ ...shares, [ticker]: { shares: 0, price: 0, amountInvested: 0 } });
             setCash(cash + sharePrice * numberOfShares);
-            setTradeHistory([
-                ...tradeHistory,
-                {
-                    ticker: activeTicker,
-                    type: "sell",
-                    shares: numberOfShares,
-                    price: sharePrice,
-                },
-            ]);
+            const tradeHistory = JSON.parse(localStorage.getItem("tradeHistory")) ?? [];
+            localStorage.setItem(
+                "tradeHistory",
+                JSON.stringify([
+                    ...tradeHistory,
+                    {
+                        ticker: ticker,
+                        type: "sell",
+                        shares: numberOfShares,
+                        price: sharePrice,
+                        return: (numberOfShares * sharePrice - amountInvested) / amountInvested,
+                    },
+                ]),
+            );
         }
     }
 
@@ -233,11 +258,11 @@ export default function Home() {
                     { t: convertDuration(dayjs(currentDay).diff(startingDay, "month")), c: koData.bars.KO[index].c },
                 ]);
             }
-            setIndex(index + 1);
-        } else {
+            index++;
+        } else if (!gameOver) {
             // game over
             // calculate and save performance data
-            setGameOver(true);
+            gameOver = true;
             let performanceData = [];
             let spyReturn = 0;
             let netWorthReturn = 0;
@@ -250,6 +275,8 @@ export default function Home() {
             let koLocalData = [];
             let bacLocalData = [];
 
+            tickers.forEach((ticker) => sellMax(ticker));
+
             for (let i = 1; i < netWorthHistory.length; i++) {
                 // stock data
                 spyLocalData.push({
@@ -257,53 +284,49 @@ export default function Home() {
                     t:
                         startingIndex > index
                             ? ""
-                            : convertDuration(dayjs(spyData.bars.SPY[startingIndex + i].t).diff(startingDay, "month")),
+                            : convertDuration(dayjs(spyData.bars.SPY[i].t).diff(startingDay, "month")),
                 });
                 tqqqLocalData.push({
                     c: tqqqData.bars.TQQQ[i].c,
                     t:
                         startingIndex > index
                             ? ""
-                            : convertDuration(
-                                  dayjs(tqqqData.bars.TQQQ[startingIndex + i].t).diff(startingDay, "month"),
-                              ),
+                            : convertDuration(dayjs(tqqqData.bars.TQQQ[i].t).diff(startingDay, "month")),
                 });
                 nflxLocalData.push({
                     c: nflxData.bars.NFLX[i].c,
                     t:
                         startingIndex > index
                             ? ""
-                            : convertDuration(
-                                  dayjs(nflxData.bars.NFLX[startingIndex + i].t).diff(startingDay, "month"),
-                              ),
+                            : convertDuration(dayjs(nflxData.bars.NFLX[i].t).diff(startingDay, "month")),
                 });
                 tltLocalData.push({
                     c: tltData.bars.TLT[i].c,
                     t:
                         startingIndex > index
                             ? ""
-                            : convertDuration(dayjs(tltData.bars.TLT[startingIndex + i].t).diff(startingDay, "month")),
+                            : convertDuration(dayjs(tltData.bars.TLT[i].t).diff(startingDay, "month")),
                 });
                 bacLocalData.push({
                     c: bacData.bars.BAC[i].c,
                     t:
                         startingIndex > index
                             ? ""
-                            : convertDuration(dayjs(bacData.bars.BAC[startingIndex + i].t).diff(startingDay, "month")),
+                            : convertDuration(dayjs(bacData.bars.BAC[i].t).diff(startingDay, "month")),
                 });
                 koLocalData.push({
                     c: koData.bars.KO[i].c,
                     t:
                         startingIndex > index
                             ? ""
-                            : convertDuration(dayjs(koData.bars.KO[startingIndex + i].t).diff(startingDay, "month")),
+                            : convertDuration(dayjs(koData.bars.KO[i].t).diff(startingDay, "month")),
                 });
                 lplLocalData.push({
                     c: lplData.bars.LPL[i].c,
                     t:
                         startingIndex > index
                             ? ""
-                            : convertDuration(dayjs(lplData.bars.LPL[startingIndex + i].t).diff(startingDay, "month")),
+                            : convertDuration(dayjs(lplData.bars.LPL[i].t).diff(startingDay, "month")),
                 });
                 // performance data
                 spyReturn += Number(
@@ -337,7 +360,6 @@ export default function Home() {
                     duration: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
                 }),
             );
-            localStorage.setItem("tradeHistory", JSON.stringify(tradeHistory));
 
             localStorage.setItem("spyData", JSON.stringify(spyLocalData));
             localStorage.setItem("tqqqData", JSON.stringify(tqqqLocalData));
@@ -630,19 +652,19 @@ export default function Home() {
                                 <div className="flex items-center">
                                     <button
                                         className={speed == 250 ? "btn btn-success" : "btn"}
-                                        onClick={() => setSpeed(250)}
+                                        onClick={() => (speed = 250)}
                                     >
                                         Slow
                                     </button>
                                     <button
                                         className={speed == 100 ? "btn btn-success" : "btn"}
-                                        onClick={() => setSpeed(100)}
+                                        onClick={() => (speed = 100)}
                                     >
                                         Normal
                                     </button>
                                     <button
                                         className={speed == 10 ? "btn btn-success" : "btn"}
-                                        onClick={() => setSpeed(10)}
+                                        onClick={() => (speed = 10)}
                                     >
                                         Fast
                                     </button>
@@ -678,7 +700,7 @@ export default function Home() {
                                     Sell 100
                                 </button>
 
-                                <button className="btn m-1 bg-red-800 w-24" onClick={sellMax}>
+                                <button className="btn m-1 bg-red-800 w-24" onClick={() => sellMax()}>
                                     Sell Max
                                 </button>
                             </div>
