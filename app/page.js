@@ -71,6 +71,7 @@ export default function Home() {
     const [startGame, setStartGame] = useState(false);
     const [gameOver, setGameOver] = useState(false);
     const [netWorthHistory, setNetWorthHistory] = useState([]);
+    const [tradeHistory, setTradeHistory] = useState([]);
     const [userData, setUserData] = useState({});
 
     function buy() {
@@ -89,6 +90,15 @@ export default function Home() {
                 },
             });
             setCash(cash - newInvestment);
+            setTradeHistory([
+                ...tradeHistory,
+                {
+                    ticker: activeTicker,
+                    type: "buy",
+                    shares: 100,
+                    price: sharePrice,
+                },
+            ]);
         }
     }
 
@@ -107,6 +117,15 @@ export default function Home() {
                 },
             });
             setCash(cash + sharePrice * 100);
+            setTradeHistory([
+                ...tradeHistory,
+                {
+                    ticker: activeTicker,
+                    type: "sell",
+                    shares: 100,
+                    price: sharePrice,
+                },
+            ]);
         }
     }
 
@@ -127,6 +146,15 @@ export default function Home() {
                 },
             });
             setCash(cash - newInvestment);
+            setTradeHistory([
+                ...tradeHistory,
+                {
+                    ticker: activeTicker,
+                    type: "buy",
+                    shares: maxShares,
+                    price: sharePrice,
+                },
+            ]);
         }
     }
 
@@ -136,6 +164,15 @@ export default function Home() {
         if (numberOfShares > 0) {
             setShares({ ...shares, [activeTicker]: { shares: 0, price: 0, amountInvested: 0 } });
             setCash(cash + sharePrice * numberOfShares);
+            setTradeHistory([
+                ...tradeHistory,
+                {
+                    ticker: activeTicker,
+                    type: "sell",
+                    shares: numberOfShares,
+                    price: sharePrice,
+                },
+            ]);
         }
     }
 
@@ -300,6 +337,8 @@ export default function Home() {
                     duration: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
                 }),
             );
+            localStorage.setItem("tradeHistory", JSON.stringify(tradeHistory));
+
             localStorage.setItem("spyData", JSON.stringify(spyLocalData));
             localStorage.setItem("tqqqData", JSON.stringify(tqqqLocalData));
             localStorage.setItem("nflxData", JSON.stringify(nflxLocalData));
