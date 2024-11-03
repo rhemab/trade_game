@@ -7,7 +7,7 @@ import useFormat from "./hooks/useFormat";
 import dayjs from "dayjs";
 
 let spyEquity = 0;
-let FEquity = 0;
+let fEquity = 0;
 let nflxEquity = 0;
 let tltEquity = 0;
 let bacEquity = 0;
@@ -72,6 +72,11 @@ export default function Home() {
     const [startGame, setStartGame] = useState(false);
     const [netWorthHistory, setNetWorthHistory] = useState([]);
     const [userData, setUserData] = useState({});
+    const [displayRandomTickers, setDisplayRandomTickers] = useState([]);
+
+    function getRandomInt(max) {
+        return Math.floor(Math.random() * max);
+    }
 
     function buy() {
         const sharePrice = Number(getClosePrice(activeTicker));
@@ -268,7 +273,7 @@ export default function Home() {
             let netWorthReturn = 0;
 
             let spyLocalData = [];
-            let FLocalData = [];
+            let fLocalData = [];
             let nflxLocalData = [];
             let tltLocalData = [];
             let lplLocalData = [];
@@ -286,7 +291,7 @@ export default function Home() {
                             ? ""
                             : convertDuration(dayjs(spyData.bars.SPY[i].t).diff(startingDay, "month")),
                 });
-                FLocalData.push({
+                fLocalData.push({
                     c: fData.bars.F[i].c,
                     t:
                         startingIndex > index
@@ -362,12 +367,13 @@ export default function Home() {
             );
 
             localStorage.setItem("spyData", JSON.stringify(spyLocalData));
-            localStorage.setItem("fData", JSON.stringify(FLocalData));
+            localStorage.setItem("fData", JSON.stringify(fLocalData));
             localStorage.setItem("nflxData", JSON.stringify(nflxLocalData));
             localStorage.setItem("tltData", JSON.stringify(tltLocalData));
             localStorage.setItem("bacData", JSON.stringify(bacLocalData));
             localStorage.setItem("lplData", JSON.stringify(lplLocalData));
             localStorage.setItem("koData", JSON.stringify(koLocalData));
+            localStorage.setItem("displayRandomTickers", JSON.stringify(displayRandomTickers));
         }
     }
 
@@ -486,6 +492,21 @@ export default function Home() {
         } else {
             setKOChartData(JSON.parse(localStorage.getItem("koData")));
         }
+        if (!localStorage.getItem("displayRandomTickers")) {
+            let selectedNumbers = [];
+            while (selectedNumbers.length < 4) {
+                const newNum = getRandomInt(6);
+                if (!selectedNumbers.includes(newNum)) {
+                    selectedNumbers.push(newNum);
+                }
+            }
+            setActiveTicker(tickers[selectedNumbers[0]]);
+            setDisplayRandomTickers(selectedNumbers.map((num) => tickers[num]));
+        } else {
+            const localRandomTickers = JSON.parse(localStorage.getItem("displayRandomTickers"));
+            setActiveTicker(localRandomTickers[0]);
+            setDisplayRandomTickers(localRandomTickers);
+        }
         setUserData(JSON.parse(localStorage.getItem("userData")));
     }, []);
 
@@ -495,7 +516,7 @@ export default function Home() {
             spyEquity = Math.abs(shares.SPY.shares) * Number(getClosePrice("SPY"));
         }
         if (fData?.bars) {
-            FEquity = Math.abs(shares.F.shares) * Number(getClosePrice("F"));
+            fEquity = Math.abs(shares.F.shares) * Number(getClosePrice("F"));
         }
         if (nflxData?.bars) {
             nflxEquity = Math.abs(shares.NFLX.shares) * Number(getClosePrice("NFLX"));
@@ -512,7 +533,7 @@ export default function Home() {
         if (koData?.bars) {
             koEquity = Math.abs(shares.KO.shares) * Number(getClosePrice("KO"));
         }
-        setEquity(spyEquity + FEquity + nflxEquity + tltEquity + bacEquity + lplEquity + koEquity);
+        setEquity(spyEquity + fEquity + nflxEquity + tltEquity + bacEquity + lplEquity + koEquity);
     }, [index, shares]);
 
     // set return
@@ -703,7 +724,7 @@ export default function Home() {
                         <div className="flex mt-2">
                             <ul className="menu gap-2 bg-base-200 w-44">
                                 <div>Stocks</div>
-                                {tickers.map((ticker) => (
+                                {displayRandomTickers.map((ticker) => (
                                     <li key={ticker}>
                                         <a
                                             className={
@@ -721,7 +742,7 @@ export default function Home() {
                             </ul>
                             <ul className="menu gap-2 bg-base-200 w-56">
                                 <div>Positions</div>
-                                {tickers.map((ticker) => {
+                                {displayRandomTickers.map((ticker) => {
                                     const pnl = calculatePL(ticker);
                                     const myShares = shares[ticker].shares;
                                     const price = shares[ticker].price;
