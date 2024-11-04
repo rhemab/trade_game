@@ -13,14 +13,25 @@ let tltEquity = 0;
 let bacEquity = 0;
 let lplEquity = 0;
 let koEquity = 0;
+let shopEquity = 0;
 
+let performanceData = [];
 let gameOver = false;
 const startingCash = 100000;
 const startingIndex = 254;
 let index = startingIndex;
 let speed = 250;
-const tickers = ["SPY", "F", "NFLX", "TLT", "BAC", "LPL", "KO"];
-const fakeTickers = { SPY: "ETF", F: "CARS", NFLX: "TV", TLT: "BONDS", BAC: "BANK", LPL: "PHONE", KO: "DRINK" };
+const tickers = ["SPY", "F", "NFLX", "TLT", "BAC", "LPL", "KO", "SHOP"];
+const fakeTickers = {
+    SPY: "ETF",
+    F: "CARS",
+    NFLX: "TV",
+    TLT: "BONDS",
+    BAC: "BANK",
+    LPL: "PHONE",
+    KO: "DRINK",
+    SHOP: "ECOM",
+};
 
 export default function Home() {
     const [loadingSpy, spyError, spyData, getSpyData] = useAlpacaApi(
@@ -44,6 +55,10 @@ export default function Home() {
     const [loadingKo, koError, koData, getKoData] = useAlpacaApi(
         `stocks/bars?symbols=KO&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
     );
+    const [loadingShop, shopError, shopData, getShopData] = useAlpacaApi(
+        `stocks/bars?symbols=SHOP&timeframe=1Day&start=2004-01-03T09%3A30%3A00-04%3A00&limit=10000&adjustment=raw&sort=asc&feed=sip`,
+    );
+
     const { formatCurrency, formatNumber, convertDuration } = useFormat();
     const [spyChartData, setSPYChartData] = useState([]);
     const [fChartData, setfChartData] = useState([]);
@@ -52,6 +67,7 @@ export default function Home() {
     const [bacChartData, setBACChartData] = useState([]);
     const [lplChartData, setLPLChartData] = useState([]);
     const [koChartData, setKOChartData] = useState([]);
+    const [shopChartData, setSHOPChartData] = useState([]);
     const [cash, setCash] = useState(startingCash);
     const [shares, setShares] = useState({
         SPY: { shares: 0, price: 0, amountInvested: 0 },
@@ -61,6 +77,7 @@ export default function Home() {
         BAC: { shares: 0, price: 0, amountInvested: 0 },
         LPL: { shares: 0, price: 0, amountInvested: 0 },
         KO: { shares: 0, price: 0, amountInvested: 0 },
+        SHOP: { shares: 0, price: 0, amountInvested: 0 },
     });
     const [equity, setEquity] = useState(0);
     const [totalReturn, setTotalReturn] = useState(0);
@@ -70,7 +87,6 @@ export default function Home() {
     const [currentDay, setCurrentDay] = useState(undefined);
     const [loading, setLoading] = useState(true);
     const [startGame, setStartGame] = useState(false);
-    const [netWorthHistory, setNetWorthHistory] = useState([]);
     const [userData, setUserData] = useState({});
     const [displayRandomTickers, setDisplayRandomTickers] = useState([]);
 
@@ -208,14 +224,6 @@ export default function Home() {
 
     function addChartData() {
         if (spyData?.bars && index < spyData?.bars?.SPY.length) {
-            setNetWorthHistory([
-                ...netWorthHistory,
-                {
-                    netWorth: Math.floor(cash + equity),
-                    spyPrice: spyData.bars.SPY[index - 1].c,
-                    duration: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
-                },
-            ]);
             setCurrentDay(spyData?.bars?.SPY[index].t);
             setSPYChartData([
                 ...spyChartData,
@@ -263,97 +271,22 @@ export default function Home() {
                     { t: convertDuration(dayjs(currentDay).diff(startingDay, "month")), c: koData.bars.KO[index].c },
                 ]);
             }
+            if (shopData?.bars?.SHOP?.length && index < shopData?.bars?.SHOP.length) {
+                setSHOPChartData([
+                    ...shopChartData,
+                    {
+                        t: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
+                        c: shopData.bars.SHOP[index].c,
+                    },
+                ]);
+            }
             index++;
         } else if (!gameOver) {
             // game over
             // calculate and save performance data
             gameOver = true;
-            let performanceData = [];
-            let spyReturn = 0;
-            let netWorthReturn = 0;
-
-            let spyLocalData = [];
-            let fLocalData = [];
-            let nflxLocalData = [];
-            let tltLocalData = [];
-            let lplLocalData = [];
-            let koLocalData = [];
-            let bacLocalData = [];
-
             tickers.forEach((ticker) => sellMax(ticker));
 
-            for (let i = 1; i < netWorthHistory.length; i++) {
-                // stock data
-                spyLocalData.push({
-                    c: spyData.bars.SPY[i].c,
-                    t:
-                        startingIndex > index
-                            ? ""
-                            : convertDuration(dayjs(spyData.bars.SPY[i].t).diff(startingDay, "month")),
-                });
-                fLocalData.push({
-                    c: fData.bars.F[i].c,
-                    t:
-                        startingIndex > index
-                            ? ""
-                            : convertDuration(dayjs(fData.bars.F[i].t).diff(startingDay, "month")),
-                });
-                nflxLocalData.push({
-                    c: nflxData.bars.NFLX[i].c,
-                    t:
-                        startingIndex > index
-                            ? ""
-                            : convertDuration(dayjs(nflxData.bars.NFLX[i].t).diff(startingDay, "month")),
-                });
-                tltLocalData.push({
-                    c: tltData.bars.TLT[i].c,
-                    t:
-                        startingIndex > index
-                            ? ""
-                            : convertDuration(dayjs(tltData.bars.TLT[i].t).diff(startingDay, "month")),
-                });
-                bacLocalData.push({
-                    c: bacData.bars.BAC[i].c,
-                    t:
-                        startingIndex > index
-                            ? ""
-                            : convertDuration(dayjs(bacData.bars.BAC[i].t).diff(startingDay, "month")),
-                });
-                koLocalData.push({
-                    c: koData.bars.KO[i].c,
-                    t:
-                        startingIndex > index
-                            ? ""
-                            : convertDuration(dayjs(koData.bars.KO[i].t).diff(startingDay, "month")),
-                });
-                lplLocalData.push({
-                    c: lplData.bars.LPL[i].c,
-                    t:
-                        startingIndex > index
-                            ? ""
-                            : convertDuration(dayjs(lplData.bars.LPL[i].t).diff(startingDay, "month")),
-                });
-                // performance data
-                spyReturn += Number(
-                    formatNumber(
-                        ((netWorthHistory[i].spyPrice - netWorthHistory[i - 1].spyPrice) /
-                            netWorthHistory[i - 1].spyPrice) *
-                            100,
-                    ),
-                );
-                netWorthReturn += Number(
-                    formatNumber(
-                        ((netWorthHistory[i].netWorth - netWorthHistory[i - 1].netWorth) /
-                            netWorthHistory[i - 1].netWorth) *
-                            100,
-                    ),
-                );
-                performanceData.push({
-                    SPY: Number(formatNumber(spyReturn)),
-                    netWorth: Number(formatNumber(netWorthReturn)),
-                    duration: netWorthHistory[i].duration,
-                });
-            }
             // set local storage items
             localStorage.setItem("performanceData", JSON.stringify(performanceData));
             localStorage.setItem(
@@ -366,13 +299,14 @@ export default function Home() {
                 }),
             );
 
-            localStorage.setItem("spyData", JSON.stringify(spyLocalData));
-            localStorage.setItem("fData", JSON.stringify(fLocalData));
-            localStorage.setItem("nflxData", JSON.stringify(nflxLocalData));
-            localStorage.setItem("tltData", JSON.stringify(tltLocalData));
-            localStorage.setItem("bacData", JSON.stringify(bacLocalData));
-            localStorage.setItem("lplData", JSON.stringify(lplLocalData));
-            localStorage.setItem("koData", JSON.stringify(koLocalData));
+            localStorage.setItem("spyData", JSON.stringify(spyChartData));
+            localStorage.setItem("fData", JSON.stringify(fChartData));
+            localStorage.setItem("nflxData", JSON.stringify(nflxChartData));
+            localStorage.setItem("tltData", JSON.stringify(tltChartData));
+            localStorage.setItem("bacData", JSON.stringify(bacChartData));
+            localStorage.setItem("lplData", JSON.stringify(lplChartData));
+            localStorage.setItem("koData", JSON.stringify(koChartData));
+            localStorage.setItem("shopData", JSON.stringify(shopChartData));
             localStorage.setItem("displayRandomTickers", JSON.stringify(displayRandomTickers));
         }
     }
@@ -380,61 +314,95 @@ export default function Home() {
     function getClosePrice(ticker) {
         switch (ticker) {
             case "SPY":
-                if (spyData?.bars?.SPY?.length) {
-                    let indexOffset = 1;
+                const localSpyData = JSON.parse(localStorage.getItem("spyData"));
+                if (localSpyData) {
+                    return localSpyData[localSpyData.length - 1].c;
+                } else if (spyData?.bars?.SPY?.length) {
+                    let indexOffset = 0;
                     while (index - indexOffset >= spyData.bars.SPY.length) {
                         indexOffset++;
                     }
                     return spyData?.bars.SPY[index - indexOffset].c;
                 }
             case "F":
-                if (fData?.bars?.F?.length) {
-                    let indexOffset = 1;
+                const localFData = JSON.parse(localStorage.getItem("fData"));
+                if (localFData) {
+                    return localFData[localFData.length - 1].c;
+                } else if (fData?.bars?.F?.length) {
+                    let indexOffset = 0;
                     while (index - indexOffset >= fData.bars.F.length) {
                         indexOffset++;
                     }
                     return fData?.bars.F[index - indexOffset].c;
                 }
             case "NFLX":
-                if (nflxData?.bars?.NFLX?.length) {
-                    let indexOffset = 1;
+                const localNflxData = JSON.parse(localStorage.getItem("nflxData"));
+                if (localNflxData) {
+                    return localNflxData[localNflxData.length - 1].c;
+                } else if (nflxData?.bars?.NFLX?.length) {
+                    let indexOffset = 0;
                     while (index - indexOffset >= nflxData.bars.NFLX.length) {
                         indexOffset++;
                     }
                     return nflxData?.bars.NFLX[index - indexOffset].c;
                 }
             case "TLT":
-                if (tltData?.bars?.TLT?.length) {
-                    let indexOffset = 1;
+                const localTltData = JSON.parse(localStorage.getItem("tltData"));
+                if (localTltData) {
+                    return localTltData[localTltData.length - 1].c;
+                } else if (tltData?.bars?.TLT?.length) {
+                    let indexOffset = 0;
                     while (index - indexOffset >= tltData.bars.TLT.length) {
                         indexOffset++;
                     }
                     return tltData?.bars.TLT[index - indexOffset].c;
                 }
             case "LPL":
-                if (lplData?.bars?.LPL?.length) {
-                    let indexOffset = 1;
+                const localLplData = JSON.parse(localStorage.getItem("lplData"));
+                if (localLplData) {
+                    return localLplData[localLplData.length - 1].c;
+                } else if (lplData?.bars?.LPL?.length) {
+                    let indexOffset = 0;
                     while (index - indexOffset >= lplData.bars.LPL.length) {
                         indexOffset++;
                     }
                     return lplData?.bars.LPL[index - indexOffset].c;
                 }
             case "BAC":
-                if (bacData?.bars?.BAC?.length) {
-                    let indexOffset = 1;
+                const localBacData = JSON.parse(localStorage.getItem("bacData"));
+                if (localBacData) {
+                    return localBacData[localBacData.length - 1].c;
+                } else if (bacData?.bars?.BAC?.length) {
+                    let indexOffset = 0;
                     while (index - indexOffset >= bacData.bars.BAC.length) {
                         indexOffset++;
                     }
                     return bacData?.bars.BAC[index - indexOffset].c;
                 }
             case "KO":
-                if (koData?.bars?.KO?.length) {
-                    let indexOffset = 1;
+                const localKoData = JSON.parse(localStorage.getItem("koData"));
+                if (localKoData) {
+                    return localKoData[localKoData.length - 1].c;
+                } else if (koData?.bars?.KO?.length) {
+                    let indexOffset = 0;
                     while (index - indexOffset >= koData.bars.KO.length) {
                         indexOffset++;
                     }
                     return koData?.bars.KO[index - indexOffset].c;
                 }
+            case "SHOP":
+                const localShopData = JSON.parse(localStorage.getItem("shopData"));
+                if (localShopData) {
+                    return localShopData[localShopData.length - 1].c;
+                } else if (shopData?.bars?.SHOP?.length) {
+                    let indexOffset = 0;
+                    while (index - indexOffset >= shopData.bars.SHOP.length) {
+                        indexOffset++;
+                    }
+                    return shopData?.bars.SHOP[index - indexOffset].c;
+                }
+            default:
+                return 0;
         }
     }
 
@@ -448,12 +416,19 @@ export default function Home() {
 
     useEffect(() => {
         if (
-            (!loadingSpy && !loadingF && !loadingNflx && !loadingBac && !loadingTlt && !loadingLpl && !loadingKo) ||
+            (!loadingSpy &&
+                !loadingF &&
+                !loadingNflx &&
+                !loadingBac &&
+                !loadingTlt &&
+                !loadingLpl &&
+                !loadingKo &&
+                !loadingShop) ||
             localStorage.getItem("userData")
         ) {
             setLoading(false);
         }
-    }, [loadingSpy, loadingF, loadingNflx, loadingBac, loadingTlt, loadingLpl, loadingKo]);
+    }, [loadingSpy, loadingF, loadingNflx, loadingBac, loadingTlt, loadingLpl, loadingKo, loadingShop]);
 
     // on page load get stock data
     useEffect(() => {
@@ -492,10 +467,15 @@ export default function Home() {
         } else {
             setKOChartData(JSON.parse(localStorage.getItem("koData")));
         }
+        if (!localStorage.getItem("shopData")) {
+            getShopData();
+        } else {
+            setSHOPChartData(JSON.parse(localStorage.getItem("shopData")));
+        }
         if (!localStorage.getItem("displayRandomTickers")) {
             let selectedNumbers = [];
             while (selectedNumbers.length < 4) {
-                const newNum = getRandomInt(6);
+                const newNum = getRandomInt(tickers.length);
                 if (!selectedNumbers.includes(newNum)) {
                     selectedNumbers.push(newNum);
                 }
@@ -533,7 +513,10 @@ export default function Home() {
         if (koData?.bars) {
             koEquity = Math.abs(shares.KO.shares) * Number(getClosePrice("KO"));
         }
-        setEquity(spyEquity + fEquity + nflxEquity + tltEquity + bacEquity + lplEquity + koEquity);
+        if (shopData?.bars) {
+            shopEquity = Math.abs(shares.SHOP.shares) * Number(getClosePrice("SHOP"));
+        }
+        setEquity(spyEquity + fEquity + nflxEquity + tltEquity + bacEquity + lplEquity + koEquity + shopEquity);
     }, [index, shares]);
 
     // set return
@@ -543,8 +526,21 @@ export default function Home() {
         const newAnnualReturn = newTotalReturn > 0 ? Math.pow(1 + newTotalReturn, 365 / days) - 1 : 0;
 
         setTotalReturn(newTotalReturn);
-        setAnnualReturn(newAnnualReturn);
-    }, [equity]);
+        setAnnualReturn(newAnnualReturn < newTotalReturn ? newAnnualReturn : 0);
+
+        // add performance data
+        if (spyData?.bars && index < spyData?.bars?.SPY.length) {
+            performanceData.push({
+                netWorth: formatNumber(newTotalReturn * 100),
+                SPY: formatNumber(
+                    ((spyData.bars.SPY[index].c - spyData.bars.SPY[startingIndex].c) /
+                        spyData.bars.SPY[startingIndex].c) *
+                        100,
+                ),
+                duration: convertDuration(dayjs(currentDay).diff(startingDay, "month")),
+            });
+        }
+    }, [equity, currentDay]);
 
     // set initial stock data when loaded
     useEffect(() => {
@@ -559,7 +555,6 @@ export default function Home() {
                 );
             }
             if (fData?.bars?.F?.length) {
-                console.log(fData);
                 setfChartData(
                     fData?.bars?.F.slice(0, startingIndex).map((day) => {
                         return { c: day.c };
@@ -601,6 +596,13 @@ export default function Home() {
                     }),
                 );
             }
+            if (shopData?.bars?.SHOP?.length) {
+                setSHOPChartData(
+                    shopData?.bars?.SHOP.slice(0, startingIndex).map((day) => {
+                        return { c: day.c };
+                    }),
+                );
+            }
         }
     }, [loading]);
 
@@ -617,7 +619,7 @@ export default function Home() {
             <div className="flex justify-center">
                 {loading ? (
                     <div className="loading loading-spinner"></div>
-                ) : spyError || fError || nflxError || tltError || lplError || bacError || koError ? (
+                ) : spyError || fError || nflxError || tltError || lplError || bacError || koError || shopError ? (
                     <div>Error fetching data</div>
                 ) : (
                     <div>
@@ -792,6 +794,9 @@ export default function Home() {
                             )}
                             {activeTicker == "KO" && (
                                 <StockChart chartData={koChartData} xDataKey={"t"} yDataKey={"c"} />
+                            )}
+                            {activeTicker == "SHOP" && (
+                                <StockChart chartData={shopChartData} xDataKey={"t"} yDataKey={"c"} />
                             )}
                         </div>
                     </div>
