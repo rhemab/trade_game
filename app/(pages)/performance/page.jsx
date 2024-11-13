@@ -23,9 +23,14 @@ export default function Performance() {
             <div className="flex flex-col items-start m-9">
                 <div className="flex justify-center w-full">Performance</div>
                 {performanceData.length > 0 && (
-                    <LineChart width={1400} height={900} data={performanceData}>
+                    <LineChart width={1400} height={600} data={performanceData}>
                         <XAxis dataKey={"duration"} />
-                        <YAxis />
+                        <YAxis
+                            unit={"%"}
+                            type="number"
+                            domain={[-100, "dataMax + 100"]}
+                            tickFormatter={(tick) => Math.floor(Number(tick))}
+                        />
                         <Tooltip isAnimationActive={false} />
                         <Line
                             isAnimationActive={false}

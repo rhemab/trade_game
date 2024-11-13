@@ -22,16 +22,6 @@ const startingIndex = 254;
 let index = startingIndex;
 let speed = 250;
 const tickers = ["SPY", "F", "NFLX", "TLT", "BAC", "LPL", "KO", "SHOP"];
-const fakeTickers = {
-    SPY: "ETF",
-    F: "CARS",
-    NFLX: "TV",
-    TLT: "BONDS",
-    BAC: "BANK",
-    LPL: "PHONE",
-    KO: "DRINK",
-    SHOP: "ECOM",
-};
 
 export default function Home() {
     const [loadingSpy, spyError, spyData, getSpyData] = useAlpacaApi(
@@ -86,6 +76,7 @@ export default function Home() {
     const [startingDay, setStartingDay] = useState(undefined);
     const [currentDay, setCurrentDay] = useState(undefined);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [startGame, setStartGame] = useState(false);
     const [userData, setUserData] = useState({});
     const [displayRandomTickers, setDisplayRandomTickers] = useState([]);
@@ -430,6 +421,12 @@ export default function Home() {
         }
     }, [loadingSpy, loadingF, loadingNflx, loadingBac, loadingTlt, loadingLpl, loadingKo, loadingShop]);
 
+    useEffect(() => {
+        if (!spyError && !fError && !nflxError && !bacError && !tltError && !lplError && !koError && !shopError) {
+            setError(false);
+        }
+    }, [spyError, fError, nflxError, bacError, tltError, lplError, koError, shopError]);
+
     // on page load get stock data
     useEffect(() => {
         if (!localStorage.getItem("spyData")) {
@@ -619,7 +616,7 @@ export default function Home() {
             <div className="flex justify-center">
                 {loading ? (
                     <div className="loading loading-spinner"></div>
-                ) : spyError || fError || nflxError || tltError || lplError || bacError || koError || shopError ? (
+                ) : error ? (
                     <div>Error fetching data</div>
                 ) : (
                     <div>
