@@ -724,25 +724,7 @@ export default function Home() {
                             </div>
                         </div>
                         <div className="flex mt-2">
-                            <ul className="menu gap-2 bg-base-200 w-44">
-                                <div>Stocks</div>
-                                {displayRandomTickers.map((ticker) => (
-                                    <li key={ticker}>
-                                        <a
-                                            className={
-                                                ticker == activeTicker
-                                                    ? "active flex justify-between"
-                                                    : "flex justify-between"
-                                            }
-                                            onClick={() => setActiveTicker(ticker)}
-                                        >
-                                            <p>{fakeTickers[ticker]}</p>
-                                            <p>{getClosePrice(ticker)}</p>
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                            <ul className="menu gap-2 bg-base-200 w-56">
+                            <ul className="menu gap-2 bg-base-200 w-72">
                                 <div>Positions</div>
                                 {displayRandomTickers.map((ticker) => {
                                     const pnl = calculatePL(ticker);
@@ -758,6 +740,7 @@ export default function Home() {
                                                 }
                                                 onClick={() => setActiveTicker(ticker)}
                                             >
+                                                <p>{getClosePrice(ticker)}</p>
                                                 <p className={myShares == 0 ? "hidden" : ""}>
                                                     {formatNumber(myShares, "decimal", 0, 0)}
                                                 </p>
